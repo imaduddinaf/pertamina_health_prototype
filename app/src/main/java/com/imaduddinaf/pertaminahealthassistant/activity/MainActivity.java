@@ -1,4 +1,4 @@
-package com.imaduddinaf.pertaminahealthassistant;
+package com.imaduddinaf.pertaminahealthassistant.activity;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -7,7 +7,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+import com.imaduddinaf.pertaminahealthassistant.R;
+import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
+
+public class MainActivity extends BaseActivity {
 
     private TextView mTextMessage;
 
