@@ -14,6 +14,9 @@ import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
 import com.imaduddinaf.pertaminahealthassistant.fragment.HomeFragment;
+import com.imaduddinaf.pertaminahealthassistant.fragment.HomeFragment_;
+import com.imaduddinaf.pertaminahealthassistant.fragment.MyStepFragment;
+import com.imaduddinaf.pertaminahealthassistant.fragment.MyStepFragment_;
 import com.imaduddinaf.pertaminahealthassistant.fragment.ProfileFragment;
 
 import org.androidannotations.annotations.AfterViews;
@@ -23,7 +26,7 @@ import org.androidannotations.annotations.ViewById;
 @EActivity(R.layout.activity_main)
 public class MainActivity extends BaseActivity
         implements HomeFragment.OnFragmentInteractionListener,
-            ProfileFragment.OnFragmentInteractionListener {
+        MyStepFragment.OnFragmentInteractionListener {
 
         private BaseFragment fragment;
     private FragmentManager fragmentManager;
@@ -38,14 +41,15 @@ public class MainActivity extends BaseActivity
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-                    fragment = new HomeFragment();
+                    fragment = new HomeFragment_();
                     break;
                 case R.id.navigation_profile:
-                    fragment = new ProfileFragment();
+                    fragment = new MyStepFragment_();//ProfileFragment();
                     break;
             }
             final FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.replace(R.id.content, fragment).commit();
+//            transaction.add(R.id.content, fragment).commit();
             return true;
         }
     };
@@ -55,7 +59,7 @@ public class MainActivity extends BaseActivity
         super.onCreate(savedInstanceState);
 
         // Init Fragment
-        fragment = new HomeFragment();
+        fragment = new HomeFragment_();
         fragmentManager = getSupportFragmentManager();
         final FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.content, fragment).commit();

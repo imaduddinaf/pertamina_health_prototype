@@ -11,10 +11,13 @@ import android.view.ViewGroup;
 import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
 
+import org.androidannotations.annotations.EFragment;
+
 /**
  * Created by Imaduddin Al Fikri on 31-Jan-18.
  */
 
+@EFragment(R.layout.fragment_home)
 public class HomeFragment extends BaseFragment {
     // TODO: Rename parameter arguments, choose names that match
     private static final String ARG_PARAM1 = "param1";
@@ -46,13 +49,6 @@ public class HomeFragment extends BaseFragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home, container, false);
     }
 
     // TODO: Rename method, update argument and hook method into UI event

@@ -1,4 +1,26 @@
+//buildscript {
+//
+//    repositories {
+//        maven {
+//            url "http://repo1.maven.org/maven2"
+//        }
+//    }
+//
+//    dependencies {
+//        classpath 'com.android.tools.build:gradle:2.3.2'
+//        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+//        classpath 'me.tatarka:gradle-retrolambda:3.4.0'
+//    }
+//}
+//
+//repositories {
+//    maven {
+//        url "http://repo1.maven.org/maven2"
+//    }
+//}
+
 apply plugin: 'com.android.application'
+//apply plugin: 'me.tatarka.retrolambda'
 
 android {
     compileSdkVersion 26
@@ -16,6 +38,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
     }
 }
 
@@ -35,7 +61,15 @@ dependencies {
     annotationProcessor "org.androidannotations:androidannotations:$androidAnnotationVersion"
     compile "org.androidannotations:androidannotations-api:$androidAnnotationVersion"
 
-    compile 'com.google.code.gson:gson:2.6.2'
+    compile 'com.google.code.gson:gson:2.7'
     compile 'com.squareup.retrofit2:retrofit:2.2.0'
     compile 'com.squareup.retrofit2:converter-gson:2.2.0'
+
+    // Loacal libs
+    compile files('libs/samsung-health-data-v1.3.0.jar')
+    compile files('libs/samsung-health-service-v1.3.0.jar')
+    compile files('libs/sdk-v1.0.0.jar')
+
+//    compile 'com.jakewharton:butterknife:8.5.1'
+//    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
 }
