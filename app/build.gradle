@@ -65,6 +65,7 @@ dependencies {
     compile 'com.squareup.retrofit2:retrofit:2.2.0'
     compile 'com.squareup.retrofit2:converter-gson:2.2.0'
 
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.0.3'
     // Loacal libs
     compile files('libs/samsung-health-data-v1.3.0.jar')
     compile files('libs/samsung-health-service-v1.3.0.jar')

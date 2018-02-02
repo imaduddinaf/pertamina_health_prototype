@@ -6,10 +6,34 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
+    <string name="loading">Memuat..</string>
+    <string name="avg_today">Rata-rata hari ini</string>
+    <string name="last">Terakhir</string>
+
+    <!-- Label -->
+    <string name="today">Hari ini</string>
+    <string name="yesterday">Kemarin</string>
+
     <!-- Step -->
     <string name="daily_step_title">Daily Step Count</string>
-    <string name="step_unit">Steps</string>
+    <string name="step_unit">langkah</string>
     <string name="step_total">Total</string>
+
+    <!-- Calorie -->
+    <string name="calorie">Kalori terbakar</string>
+    <string name="calorie_unit">kalori</string>
+
+    <!-- Heart rate -->
+    <string name="heart_rate">Detak jantung</string>
+    <string name="heart_rate_unit">bpm</string>
+
+    <!-- Weight -->
+    <string name="weight">Berat badan</string>
+    <string name="weight_unit">kg</string>
+
+    <!-- Sleep -->
+    <string name="sleep">Waktu tidur</string>
+    <string name="sleep_unit">jam</string>
 
     <!-- Permission -->
     <string name="ok">OK</string>

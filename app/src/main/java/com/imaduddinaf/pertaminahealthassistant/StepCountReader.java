@@ -1,7 +1,8 @@
-package com.imaduddinaf.pertaminahealthassistant.core;
+package com.imaduddinaf.pertaminahealthassistant;
 
 import android.util.Log;
 
+import com.imaduddinaf.pertaminahealthassistant.core.Helper;
 import com.samsung.android.sdk.healthdata.HealthConstants;
 import com.samsung.android.sdk.healthdata.HealthData;
 import com.samsung.android.sdk.healthdata.HealthDataResolver;

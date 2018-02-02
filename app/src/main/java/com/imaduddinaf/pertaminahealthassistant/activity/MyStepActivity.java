@@ -1,18 +1,12 @@
-package com.imaduddinaf.pertaminahealthassistant.fragment;
+package com.imaduddinaf.pertaminahealthassistant.activity;
 
 import android.app.AlertDialog;
-import android.content.Context;
-import android.net.Uri;
+import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.imaduddinaf.pertaminahealthassistant.R;
-import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
 import com.imaduddinaf.pertaminahealthassistant.core.Helper;
 import com.imaduddinaf.pertaminahealthassistant.StepCountReader;
 import com.samsung.android.sdk.healthdata.HealthConnectionErrorResult;
@@ -24,23 +18,16 @@ import com.samsung.android.sdk.healthdata.HealthResultHolder;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Click;
-import org.androidannotations.annotations.EFragment;
+import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by Imaduddin Al Fikri on 31-Jan-18.
- */
-
-@EFragment(R.layout.fragment_my_step)
-public class MyStepFragment extends BaseFragment{
-    private OnFragmentInteractionListener mListener;
+@EActivity(R.layout.activity_my_step)
+public class MyStepActivity extends AppCompatActivity {
 
     @ViewById(R.id.tv_step_count)
     TextView tvStepCount;
@@ -48,40 +35,24 @@ public class MyStepFragment extends BaseFragment{
     @ViewById(R.id.tv_date)
     TextView tvDate;
 
-    @ViewById(R.id.lv_details)
-    ListView lvDetails;
-
     private long currentStartTime;
     private HealthDataStore healthDataStore;
     private StepCountReader stepCountReader;
-    private StepDetailListAdapter stepDetailListAdapter;
-
-    public MyStepFragment() {
-        // Required empty public constructor
-    }
-
-    public static MyStepFragment newInstance() {
-        MyStepFragment fragment = new MyStepFragment_();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
-    }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Get the start time of today in local
         currentStartTime = StepCountReader.TODAY_START_UTC_TIME;
 
         HealthDataService healthDataService = new HealthDataService();
         try {
-            healthDataService.initialize(this.getContext());
+            healthDataService.initialize(this);
         } catch (Exception e) {
             e.printStackTrace();
         }
         // Create a HealthDataStore instance and set its listener
-        healthDataStore = new HealthDataStore(this.getContext(), connectionListener);
+        healthDataStore = new HealthDataStore(this, connectionListener);
 
         // Request the connection to the health data store
         healthDataStore.connectService();
@@ -91,34 +62,12 @@ public class MyStepFragment extends BaseFragment{
     @AfterViews
     public void afterViews() {
         tvDate.setText(Helper.getFormattedTime(currentStartTime));
-
-        stepDetailListAdapter= new StepDetailListAdapter();
-        lvDetails.setAdapter(stepDetailListAdapter);
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
+    public void onDestroy() {
         healthDataStore.disconnectService();
-        super.onDetach();
-        mListener = null;
+        super.onDestroy();
     }
 
     @Override
@@ -132,7 +81,6 @@ public class MyStepFragment extends BaseFragment{
     void clickOnDateBefore() {
         currentStartTime -= StepCountReader.ONE_DAY;
         tvDate.setText(Helper.getFormattedTime(currentStartTime));
-        stepDetailListAdapter.changeDataSet(Collections.<StepCountReader.StepBinningData>emptyList());
         stepCountReader.requestDailyStepCount(currentStartTime);
     }
 
@@ -140,13 +88,7 @@ public class MyStepFragment extends BaseFragment{
     void clickOnDateNext() {
         currentStartTime += StepCountReader.ONE_DAY;
         tvDate.setText(Helper.getFormattedTime(currentStartTime));
-        stepDetailListAdapter.changeDataSet(Collections.emptyList());
         stepCountReader.requestDailyStepCount(currentStartTime);
-    }
-
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
     }
 
     // Here below are boilerplate codes that can be optimized
@@ -170,7 +112,7 @@ public class MyStepFragment extends BaseFragment{
             };
 
     private void showPermissionAlarmDialog() {
-        AlertDialog.Builder alert = new AlertDialog.Builder(this.getContext());
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
         alert.setTitle(R.string.notice)
                 .setMessage(R.string.msg_perm_acquired)
                 .setPositiveButton(R.string.ok, null)
@@ -178,7 +120,7 @@ public class MyStepFragment extends BaseFragment{
     }
 
     private void showConnectionFailureDialog(final HealthConnectionErrorResult error) {
-        AlertDialog.Builder alert = new AlertDialog.Builder(this.getContext());
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
 
         if (error.hasResolution()) {
             switch (error.getErrorCode()) {
@@ -204,7 +146,7 @@ public class MyStepFragment extends BaseFragment{
 
         alert.setPositiveButton(R.string.ok, (dialog, id) -> {
             if (error.hasResolution()) {
-                error.resolve(this.getActivity());
+                error.resolve(this);
             }
         });
 
@@ -231,7 +173,7 @@ public class MyStepFragment extends BaseFragment{
         HealthPermissionManager pmsManager = new HealthPermissionManager(healthDataStore);
         try {
             // Show user permission UI for allowing user to change options
-            pmsManager.requestPermissions(generatePermissionKeySet(), this.getActivity())
+            pmsManager.requestPermissions(generatePermissionKeySet(), this)
                     .setResultListener(mPermissionListener);
         } catch (Exception e) {
             Log.e(Helper.ERROR_TAG, "Permission setting fails.", e);
@@ -278,7 +220,7 @@ public class MyStepFragment extends BaseFragment{
 
         @Override
         public void onBinningDataChanged(List<StepCountReader.StepBinningData> stepBinningDataList) {
-            updateBinningChartView(stepBinningDataList);
+//            updateBinningChartView(stepBinningDataList);
         }
     };
 
@@ -286,50 +228,4 @@ public class MyStepFragment extends BaseFragment{
         tvStepCount.setText(count);
     }
 
-    private void updateBinningChartView(List<StepCountReader.StepBinningData> stepBinningDataList) {
-        // the following code will be replaced with chart drawing code
-        Log.d(Helper.DEBUG_TAG, "updateBinningChartView");
-        stepDetailListAdapter.changeDataSet(stepBinningDataList);
-        for (StepCountReader.StepBinningData data : stepBinningDataList) {
-            Log.d(Helper.DEBUG_TAG, "TIME : " + data.time + "  COUNT : " + data.count);
-        }
-    }
-
-    // List Adapter
-    private class StepDetailListAdapter extends BaseAdapter {
-
-        private List<StepCountReader.StepBinningData> dataList = new ArrayList<>();
-
-        void changeDataSet(List<StepCountReader.StepBinningData> dataList) {
-            this.dataList = dataList;
-            notifyDataSetChanged();
-        }
-
-        @Override
-        public int getCount() {
-            return dataList.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return dataList.get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            if (convertView == null) {
-                convertView = getLayoutInflater().inflate(android.R.layout.simple_list_item_2, null);
-            }
-
-            ((TextView) convertView.findViewById(android.R.id.text1)).setText(dataList.get(position).count + " steps");
-            ((TextView) convertView.findViewById(android.R.id.text2)).setText(dataList.get(position).time);
-            return convertView;
-        }
-    }
 }
