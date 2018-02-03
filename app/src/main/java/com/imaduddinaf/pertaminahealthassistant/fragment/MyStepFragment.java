@@ -40,7 +40,6 @@ import java.util.Set;
 
 @EFragment(R.layout.fragment_my_step)
 public class MyStepFragment extends BaseFragment{
-    private OnFragmentInteractionListener mListener;
 
     @ViewById(R.id.tv_step_count)
     TextView tvStepCount;
@@ -92,33 +91,14 @@ public class MyStepFragment extends BaseFragment{
     public void afterViews() {
         tvDate.setText(Helper.getFormattedTime(currentStartTime));
 
-        stepDetailListAdapter= new StepDetailListAdapter();
+        stepDetailListAdapter = new StepDetailListAdapter();
         lvDetails.setAdapter(stepDetailListAdapter);
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
     }
 
     @Override
     public void onDetach() {
         healthDataStore.disconnectService();
         super.onDetach();
-        mListener = null;
     }
 
     @Override
@@ -142,11 +122,6 @@ public class MyStepFragment extends BaseFragment{
         tvDate.setText(Helper.getFormattedTime(currentStartTime));
         stepDetailListAdapter.changeDataSet(Collections.emptyList());
         stepCountReader.requestDailyStepCount(currentStartTime);
-    }
-
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
     }
 
     // Here below are boilerplate codes that can be optimized

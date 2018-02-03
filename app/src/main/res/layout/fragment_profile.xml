@@ -59,11 +59,13 @@
 
         <!-- Step & calorie cards -->
         <LinearLayout
+            android:id="@+id/container_step_calorie"
             android:layout_width="match_parent"
             android:layout_height="240dp"
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/container_last_step_calorie"
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:layout_marginLeft="8dp"
@@ -134,6 +136,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/container_current_step_calorie"
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:layout_marginLeft="4dp"
@@ -211,6 +214,7 @@
 
         <!-- Heart rate cards -->
         <LinearLayout
+            android:id="@+id/container_heart_rate"
             android:layout_width="match_parent"
             android:layout_height="147dp">
 
@@ -315,11 +319,13 @@
 
         <!-- Weight & sleep cards -->
         <LinearLayout
+            android:id="@+id/container_weight_sleep"
             android:layout_width="match_parent"
             android:layout_height="147dp"
             android:orientation="horizontal">
 
             <RelativeLayout
+                android:id="@+id/container_weight"
                 android:layout_width="match_parent"
                 android:layout_height="147dp"
                 android:layout_weight="1"
@@ -358,11 +364,12 @@
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/container_sleep"
                 android:layout_width="match_parent"
                 android:layout_height="147dp"
                 android:layout_weight="1"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="8dp"
                 android:background="@color/white">
 
                 <TextView

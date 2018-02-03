@@ -30,7 +30,6 @@ import org.androidannotations.annotations.ViewById;
 public class HomeFragment extends BaseFragment {
     private static final String STORE_URL = "market://details?id=com.sec.android.app.shealth";
 
-    private OnFragmentInteractionListener mListener;
     private TrackerManager mTrackerManager = null;
 
     @ViewById(R.id.container_step_count)
@@ -44,13 +43,6 @@ public class HomeFragment extends BaseFragment {
 
     public HomeFragment() {
         // Required empty public constructor
-    }
-
-    public static HomeFragment newInstance(String param1, String param2) {
-        HomeFragment fragment = new HomeFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
     }
 
     @Override
@@ -74,35 +66,6 @@ public class HomeFragment extends BaseFragment {
             Log.e(Helper.ERROR_TAG, e.toString());
             Toast.makeText(this.getContext(), e.toString(), Toast.LENGTH_LONG).show();
         }
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
     }
 
     @Click(R.id.container_step_count)

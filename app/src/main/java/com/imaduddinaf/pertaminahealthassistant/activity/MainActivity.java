@@ -23,9 +23,7 @@ import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 
 @EActivity(R.layout.activity_main)
-public class MainActivity extends BaseActivity
-        implements HomeFragment.OnFragmentInteractionListener,
-        ProfileFragment.OnFragmentInteractionListener {
+public class MainActivity extends BaseActivity {
 
         private BaseFragment fragment;
     private FragmentManager fragmentManager;
@@ -70,8 +68,4 @@ public class MainActivity extends BaseActivity
         navigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
     }
 
-    @Override
-    public void onFragmentInteraction(Uri uri) {
-
-    }
 }
