@@ -1,11 +1,12 @@
-package com.imaduddinaf.pertaminahealthassistant;
+package com.imaduddinaf.pertaminahealthassistant.shealth;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.util.Log;
 
+import com.imaduddinaf.pertaminahealthassistant.Constant;
+import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
-import com.imaduddinaf.pertaminahealthassistant.core.Helper;
 import com.samsung.android.sdk.healthdata.HealthDataStore;
 import com.samsung.android.sdk.healthdata.HealthPermissionManager;
 import com.samsung.android.sdk.healthdata.HealthResultHolder;
@@ -87,7 +88,7 @@ public class SHealthPermissionManager {
             Map<HealthPermissionManager.PermissionKey, Boolean> resultMap = pmsManager.isPermissionAcquired(generatePermissionKeySet(dataTypes, permissionType));
             return !resultMap.values().contains(Boolean.FALSE);
         } catch (Exception e) {
-            Log.e(Helper.ERROR_TAG, "Permission request fails.", e);
+            Log.e(Constant.ERROR_TAG, "Permission request fails.", e);
         }
         return false;
     }
@@ -101,7 +102,7 @@ public class SHealthPermissionManager {
             pmsManager.requestPermissions(generatePermissionKeySet(dataTypes, permissionType), activityHolder)
                     .setResultListener(permissionListener);
         } catch (Exception e) {
-            Log.e(Helper.ERROR_TAG, "Permission setting fails.", e);
+            Log.e(Constant.ERROR_TAG, "Permission setting fails.", e);
         }
     }
 }

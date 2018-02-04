@@ -1,11 +1,13 @@
-package com.imaduddinaf.pertaminahealthassistant;
+package com.imaduddinaf.pertaminahealthassistant.shealth;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.util.Log;
 
+import com.imaduddinaf.pertaminahealthassistant.shealth.type.BaseSHealthType;
+import com.imaduddinaf.pertaminahealthassistant.Constant;
+import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
-import com.imaduddinaf.pertaminahealthassistant.core.Helper;
 import com.samsung.android.sdk.healthdata.HealthConnectionErrorResult;
 import com.samsung.android.sdk.healthdata.HealthDataService;
 import com.samsung.android.sdk.healthdata.HealthDataStore;
@@ -13,9 +15,7 @@ import com.samsung.android.sdk.healthdata.HealthPermissionManager;
 
 public class SHealthManager {
 
-    private long currentStartTime;
     private HealthDataStore healthDataStore;
-    private StepCountReader stepCountReader;
     private boolean isConnected = false;
 
     private Context context;
@@ -27,14 +27,12 @@ public class SHealthManager {
     public SHealthManager(Context context,
                           BaseActivity activityHolder,
                           SHealthPermissionManager sHealthPermissionManager,
-                          BaseSHealthType baseSHealthType,
-                          long currentStartTime) {
+                          BaseSHealthType baseSHealthType) {
 
         this.context = context;
         this.activityHolder = activityHolder;
         this.sHealthPermissionManager = sHealthPermissionManager;
         this.baseSHealthType = baseSHealthType;
-        this.currentStartTime = currentStartTime;
 
         HealthDataService healthDataService = new HealthDataService();
         try {
@@ -44,7 +42,6 @@ public class SHealthManager {
         }
 
         healthDataStore = new HealthDataStore(context, connectionListener);
-        stepCountReader = new StepCountReader(healthDataStore);
     }
 
     public boolean isConnected() {
@@ -57,18 +54,6 @@ public class SHealthManager {
 
     public SHealthPermissionManager getsHealthPermissionManager() {
         return sHealthPermissionManager;
-    }
-
-    public BaseSHealthType getBaseSHealthType() {
-        return baseSHealthType;
-    }
-
-    public long getCurrentStartTime() {
-        return currentStartTime;
-    }
-
-    public StepCountReader getStepCountReader() {
-        return stepCountReader;
     }
 
     public void connectService() {
@@ -95,7 +80,7 @@ public class SHealthManager {
     private final HealthDataStore.ConnectionListener connectionListener = new HealthDataStore.ConnectionListener() {
         @Override
         public void onConnected() {
-            Log.d(Helper.DEBUG_TAG, "onConnected");
+            Log.d(Constant.DEBUG_TAG, "onConnected");
             isConnected = true;
 
             if (isPermissionAcquired()) {
@@ -107,14 +92,14 @@ public class SHealthManager {
 
         @Override
         public void onConnectionFailed(HealthConnectionErrorResult error) {
-            Log.d(Helper.DEBUG_TAG, "onConnectionFailed");
+            Log.d(Constant.DEBUG_TAG, "onConnectionFailed");
             isConnected = false;
             showConnectionFailureDialog(error);
         }
 
         @Override
         public void onDisconnected() {
-            Log.d(Helper.DEBUG_TAG, "onDisconnected");
+            Log.d(Constant.DEBUG_TAG, "onDisconnected");
             isConnected = false;
         }
     };

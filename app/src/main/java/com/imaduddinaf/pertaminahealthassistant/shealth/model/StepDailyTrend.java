@@ -1,10 +1,8 @@
-package com.imaduddinaf.pertaminahealthassistant;
+package com.imaduddinaf.pertaminahealthassistant.shealth.model;
+
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.StepCountReader;
 
 import java.util.List;
-
-/**
- * Created by Imaduddin Al Fikri on 31-Jan-18.
- */
 
 public class StepDailyTrend {
     private Integer totalStep = 0;

@@ -7,11 +7,10 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.view.MenuItem;
 
+import com.imaduddinaf.pertaminahealthassistant.shealth.type.BaseSHealthType;
 import com.imaduddinaf.pertaminahealthassistant.R;
-import com.imaduddinaf.pertaminahealthassistant.SHealthManager;
-import com.imaduddinaf.pertaminahealthassistant.SHealthPermissionManager;
-import com.imaduddinaf.pertaminahealthassistant.StepCountType;
-import com.imaduddinaf.pertaminahealthassistant.StepCountReader;
+import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthManager;
+import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthPermissionManager;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
 import com.imaduddinaf.pertaminahealthassistant.fragment.HomeFragment_;
@@ -73,6 +72,7 @@ public class MainActivity extends BaseActivity {
 
     private void doAfterAppLaunch() {
         // get samsung health permission
+
         sHealthManager = new SHealthManager(
                 this,
                 this,
@@ -86,10 +86,10 @@ public class MainActivity extends BaseActivity {
                             getSHealthPermission();
                         }
                 ),
-                new StepCountType(),
-                StepCountReader.TODAY_START_UTC_TIME
+                new BaseSHealthType()
         );
-        getSHealthPermission();
+
+        sHealthManager.connectService();
     }
 
     private void getSHealthPermission() {

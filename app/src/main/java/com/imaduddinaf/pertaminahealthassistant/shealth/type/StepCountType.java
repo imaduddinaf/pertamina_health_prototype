@@ -1,5 +1,6 @@
-package com.imaduddinaf.pertaminahealthassistant;
+package com.imaduddinaf.pertaminahealthassistant.shealth.type;
 
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.StepCountReader;
 import com.samsung.android.sdk.healthdata.HealthConstants;
 
 public class StepCountType extends BaseSHealthType {

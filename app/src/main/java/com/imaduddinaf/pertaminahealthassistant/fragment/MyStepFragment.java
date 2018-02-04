@@ -1,8 +1,6 @@
 package com.imaduddinaf.pertaminahealthassistant.fragment;
 
 import android.app.AlertDialog;
-import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -11,10 +9,11 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.imaduddinaf.pertaminahealthassistant.Helper;
 import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
-import com.imaduddinaf.pertaminahealthassistant.core.Helper;
-import com.imaduddinaf.pertaminahealthassistant.StepCountReader;
+import com.imaduddinaf.pertaminahealthassistant.Constant;
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.StepCountReader;
 import com.samsung.android.sdk.healthdata.HealthConnectionErrorResult;
 import com.samsung.android.sdk.healthdata.HealthConstants;
 import com.samsung.android.sdk.healthdata.HealthDataService;
@@ -22,7 +21,6 @@ import com.samsung.android.sdk.healthdata.HealthDataStore;
 import com.samsung.android.sdk.healthdata.HealthPermissionManager;
 import com.samsung.android.sdk.healthdata.HealthResultHolder;
 
-import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
@@ -71,7 +69,7 @@ public class MyStepFragment extends BaseFragment{
         super.onCreate(savedInstanceState);
 
         // Get the start time of today in local
-        currentStartTime = StepCountReader.TODAY_START_UTC_TIME;
+        currentStartTime = Constant.TODAY_START_UTC_TIME;
 
         HealthDataService healthDataService = new HealthDataService();
         try {
@@ -112,7 +110,7 @@ public class MyStepFragment extends BaseFragment{
     // Button Listener
     @Click(R.id.button_date_before)
     void clickOnDateBefore() {
-        currentStartTime -= StepCountReader.ONE_DAY;
+        currentStartTime -= Constant.ONE_DAY;
         tvDate.setText(Helper.getFormattedTime(currentStartTime));
         stepDetailListAdapter.changeDataSet(Collections.<StepCountReader.StepBinningData>emptyList());
         stepCountReader.requestDailyStepCount(currentStartTime);
@@ -120,7 +118,7 @@ public class MyStepFragment extends BaseFragment{
 
     @Click(R.id.button_date_next)
     void clickOnDateNext() {
-        currentStartTime += StepCountReader.ONE_DAY;
+        currentStartTime += Constant.ONE_DAY;
         tvDate.setText(Helper.getFormattedTime(currentStartTime));
         stepDetailListAdapter.changeDataSet(Collections.emptyList());
         stepCountReader.requestDailyStepCount(currentStartTime);
@@ -199,7 +197,7 @@ public class MyStepFragment extends BaseFragment{
             Map<HealthPermissionManager.PermissionKey, Boolean> resultMap = pmsManager.isPermissionAcquired(generatePermissionKeySet());
             return !resultMap.values().contains(Boolean.FALSE);
         } catch (Exception e) {
-            Log.e(Helper.ERROR_TAG, "Permission request fails.", e);
+            Log.e(Constant.ERROR_TAG, "Permission request fails.", e);
         }
         return false;
     }
@@ -211,7 +209,7 @@ public class MyStepFragment extends BaseFragment{
             pmsManager.requestPermissions(generatePermissionKeySet(), this.getActivity())
                     .setResultListener(mPermissionListener);
         } catch (Exception e) {
-            Log.e(Helper.ERROR_TAG, "Permission setting fails.", e);
+            Log.e(Constant.ERROR_TAG, "Permission setting fails.", e);
         }
     }
 
@@ -226,7 +224,7 @@ public class MyStepFragment extends BaseFragment{
     private final HealthDataStore.ConnectionListener connectionListener = new HealthDataStore.ConnectionListener() {
         @Override
         public void onConnected() {
-            Log.d(Helper.DEBUG_TAG, "onConnected");
+            Log.d(Constant.DEBUG_TAG, "onConnected");
             if (isPermissionAcquired()) {
                 stepCountReader.requestDailyStepCount(currentStartTime);
             } else {
@@ -236,13 +234,13 @@ public class MyStepFragment extends BaseFragment{
 
         @Override
         public void onConnectionFailed(HealthConnectionErrorResult error) {
-            Log.d(Helper.DEBUG_TAG, "onConnectionFailed");
+            Log.d(Constant.DEBUG_TAG, "onConnectionFailed");
             showConnectionFailureDialog(error);
         }
 
         @Override
         public void onDisconnected() {
-            Log.d(Helper.DEBUG_TAG, "onDisconnected");
+            Log.d(Constant.DEBUG_TAG, "onDisconnected");
         }
     };
 
@@ -252,10 +250,10 @@ public class MyStepFragment extends BaseFragment{
 
     private void updateBinningChartView(List<StepCountReader.StepBinningData> stepBinningDataList) {
         // the following code will be replaced with chart drawing code
-        Log.d(Helper.DEBUG_TAG, "updateBinningChartView");
+        Log.d(Constant.DEBUG_TAG, "updateBinningChartView");
         stepDetailListAdapter.changeDataSet(stepBinningDataList);
         for (StepCountReader.StepBinningData data : stepBinningDataList) {
-            Log.d(Helper.DEBUG_TAG, "TIME : " + data.time + "  COUNT : " + data.count);
+            Log.d(Constant.DEBUG_TAG, "TIME : " + data.time + "  COUNT : " + data.count);
         }
     }
 
