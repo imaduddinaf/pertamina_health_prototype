@@ -1,14 +1,6 @@
 package com.imaduddinaf.pertaminahealthassistant.fragment;
 
-import android.app.AlertDialog;
-import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -16,26 +8,13 @@ import android.widget.TextView;
 import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.SHealthManager;
 import com.imaduddinaf.pertaminahealthassistant.SHealthPermissionManager;
+import com.imaduddinaf.pertaminahealthassistant.StepCountType;
 import com.imaduddinaf.pertaminahealthassistant.StepCountReader;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
-import com.imaduddinaf.pertaminahealthassistant.core.Helper;
-import com.samsung.android.sdk.healthdata.HealthConnectionErrorResult;
-import com.samsung.android.sdk.healthdata.HealthConstants;
-import com.samsung.android.sdk.healthdata.HealthDataService;
-import com.samsung.android.sdk.healthdata.HealthDataStore;
-import com.samsung.android.sdk.healthdata.HealthPermissionManager;
-import com.samsung.android.sdk.healthdata.HealthResultHolder;
 
-import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
 
 /**
  * Created by Imaduddin Al Fikri on 31-Jan-18.
@@ -93,7 +72,7 @@ public class ProfileFragment extends BaseFragment {
     TextView tvSleepCount;
 
     // Managers
-    SHealthManager sHealthManager;
+    SHealthManager sHealthStepCountManager;
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -103,36 +82,74 @@ public class ProfileFragment extends BaseFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        sHealthManager = new SHealthManager(
+        sHealthStepCountManager = new SHealthManager(
                 this.getContext(),
+                (BaseActivity) this.getActivity(),
                 new SHealthPermissionManager(this.getContext(),
                         (BaseActivity) this.getActivity(),
-                        this::didGotPermission,
-                        this::didNotGotPermission),
-                StepCountReader.TODAY_START_UTC_TIME,
-                this::didStepCountChanges,
-                this::didStepBinningDataChanges
+                        () -> {
+                            //didGotPermission
+                            requestStepCount();
+                        },
+                        () -> {
+                            // didNotGotPermission
+                            // empty
+                        }
+                ),
+                new StepCountType(),
+                StepCountReader.TODAY_START_UTC_TIME
         );
     }
 
-    void didGotPermission() {
+    @Override
+    protected void afterViews() {
+        super.afterViews();
 
+        requestStepCount();
     }
 
-    void didNotGotPermission() {
+    @Override
+    public void onDetach() {
+        disconnectServices();
 
+        super.onDetach();
     }
 
-    void didStepCountChanges(Integer count) {
+    @Override
+    public void onResume() {
+        super.onResume();
 
+        if (sHealthStepCountManager.isConnected()) {
+            requestStepCount();
+        } else {
+            sHealthStepCountManager.connectService();
+        }
     }
 
-    void didStepBinningDataChanges(List<StepCountReader.StepBinningData> list) {
-
+    private void connectServices() {
+        sHealthStepCountManager.connectService();
     }
 
-    @AfterViews
-    void afterViews() {
+    private void disconnectServices() {
+        sHealthStepCountManager.disconnectService();
+    }
 
+    private void requestStepCount() {
+        long today = StepCountReader.TODAY_START_UTC_TIME;
+        long yesterday = today - StepCountReader.ONE_DAY;
+
+        sHealthStepCountManager.getStepCountReader().readStepCount(today, stepDailyTrend -> {
+            if (isAfterViewsOrInjection()) {
+                tvStepCount.setText("" + stepDailyTrend.getTotalStep());
+                tvCalorieCount.setText("" + stepDailyTrend.getTotalCalorie().intValue());
+            }
+        });
+
+        sHealthStepCountManager.getStepCountReader().readStepCount(yesterday, stepDailyTrend -> {
+            if (isAfterViewsOrInjection()) {
+                tvLastStepCount.setText("" + stepDailyTrend.getTotalStep());
+                tvLastCalorieCount.setText("" + stepDailyTrend.getTotalCalorie().intValue());
+            }
+        });
     }
 }

@@ -7,48 +7,34 @@ import android.util.Log;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
 import com.imaduddinaf.pertaminahealthassistant.core.Helper;
 import com.samsung.android.sdk.healthdata.HealthConnectionErrorResult;
-import com.samsung.android.sdk.healthdata.HealthConstants;
 import com.samsung.android.sdk.healthdata.HealthDataService;
 import com.samsung.android.sdk.healthdata.HealthDataStore;
 import com.samsung.android.sdk.healthdata.HealthPermissionManager;
-import com.samsung.android.sdk.healthdata.HealthResultHolder;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-/**
- * Created by Imaduddin Al Fikri on 03-Feb-18.
- */
 
 public class SHealthManager {
 
     private long currentStartTime;
     private HealthDataStore healthDataStore;
     private StepCountReader stepCountReader;
+    private boolean isConnected = false;
 
     private Context context;
     private BaseActivity activityHolder;
 
     private SHealthPermissionManager sHealthPermissionManager;
-
-    private Consumer<Integer> onStepCountChanges;
-    private Consumer<List<StepCountReader.StepBinningData>> onStepBinningDataChanges;
+    private BaseSHealthType baseSHealthType;
 
     public SHealthManager(Context context,
+                          BaseActivity activityHolder,
                           SHealthPermissionManager sHealthPermissionManager,
-                          long currentStartTime,
-                          Consumer<Integer> onStepCountChanges,
-                          Consumer<List<StepCountReader.StepBinningData>> onStepBinningDataChanges) {
+                          BaseSHealthType baseSHealthType,
+                          long currentStartTime) {
 
         this.context = context;
+        this.activityHolder = activityHolder;
         this.sHealthPermissionManager = sHealthPermissionManager;
+        this.baseSHealthType = baseSHealthType;
         this.currentStartTime = currentStartTime;
-        this.onStepCountChanges = onStepCountChanges;
-        this.onStepBinningDataChanges = onStepBinningDataChanges;
 
         HealthDataService healthDataService = new HealthDataService();
         try {
@@ -58,7 +44,27 @@ public class SHealthManager {
         }
 
         healthDataStore = new HealthDataStore(context, connectionListener);
-        stepCountReader = new StepCountReader(healthDataStore, stepCountObserver);
+        stepCountReader = new StepCountReader(healthDataStore);
+    }
+
+    public boolean isConnected() {
+        return isConnected;
+    }
+
+    public HealthDataStore getHealthDataStore() {
+        return healthDataStore;
+    }
+
+    public SHealthPermissionManager getsHealthPermissionManager() {
+        return sHealthPermissionManager;
+    }
+
+    public BaseSHealthType getBaseSHealthType() {
+        return baseSHealthType;
+    }
+
+    public long getCurrentStartTime() {
+        return currentStartTime;
     }
 
     public StepCountReader getStepCountReader() {
@@ -73,35 +79,43 @@ public class SHealthManager {
         healthDataStore.disconnectService();
     }
 
+    public boolean isPermissionAcquired() {
+        return sHealthPermissionManager.isPermissionAcquired(healthDataStore,
+                baseSHealthType.getTypes(),
+                HealthPermissionManager.PermissionType.READ);
+    }
+
+    public void requestPermission() {
+        sHealthPermissionManager.requestPermission(healthDataStore,
+                baseSHealthType.getTypes(),
+                HealthPermissionManager.PermissionType.READ);
+    }
+
     // Connection Listener
     private final HealthDataStore.ConnectionListener connectionListener = new HealthDataStore.ConnectionListener() {
         @Override
         public void onConnected() {
             Log.d(Helper.DEBUG_TAG, "onConnected");
-            String[] dataTypes = new String[] {
-                    HealthConstants.StepCount.HEALTH_DATA_TYPE,
-                    StepCountReader.STEP_SUMMARY_DATA_TYPE_NAME
-            };
-            if (sHealthPermissionManager.isPermissionAcquired(healthDataStore,
-                    dataTypes,
-                    HealthPermissionManager.PermissionType.READ)) {
-                stepCountReader.requestDailyStepCount(currentStartTime);
+            isConnected = true;
+
+            if (isPermissionAcquired()) {
+                sHealthPermissionManager.getOnGotPermission().run();
             } else {
-                sHealthPermissionManager.requestPermission(healthDataStore,
-                        dataTypes,
-                        HealthPermissionManager.PermissionType.READ);
+                requestPermission();
             }
         }
 
         @Override
         public void onConnectionFailed(HealthConnectionErrorResult error) {
             Log.d(Helper.DEBUG_TAG, "onConnectionFailed");
+            isConnected = false;
             showConnectionFailureDialog(error);
         }
 
         @Override
         public void onDisconnected() {
             Log.d(Helper.DEBUG_TAG, "onDisconnected");
+            isConnected = false;
         }
     };
 
@@ -142,17 +156,4 @@ public class SHealthManager {
 
         alert.show();
     }
-
-    // Step Count Reader
-    private final StepCountReader.StepCountObserver stepCountObserver = new StepCountReader.StepCountObserver() {
-        @Override
-        public void onChanged(int count) {
-            onStepCountChanges.accept(count);
-        }
-
-        @Override
-        public void onBinningDataChanged(List<StepCountReader.StepBinningData> stepBinningDataList) {
-            onStepBinningDataChanges.accept(stepBinningDataList);
-        }
-    };
 }

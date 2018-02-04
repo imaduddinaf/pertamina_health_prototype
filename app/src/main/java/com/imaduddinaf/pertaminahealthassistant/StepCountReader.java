@@ -8,6 +8,8 @@ import com.samsung.android.sdk.healthdata.HealthData;
 import com.samsung.android.sdk.healthdata.HealthDataResolver;
 import com.samsung.android.sdk.healthdata.HealthDataStore;
 import com.samsung.android.sdk.healthdata.HealthDataUtil;
+import com.samsung.android.sdk.healthdata.HealthDevice;
+import com.samsung.android.sdk.healthdata.HealthDeviceManager;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -16,10 +18,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-
-/**
- * Created by Imaduddin Al Fikri on 31-Jan-18.
- */
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 public class StepCountReader {
     public static final String STEP_SUMMARY_DATA_TYPE_NAME = "com.samsung.shealth.step_daily_trend";
@@ -35,7 +35,7 @@ public class StepCountReader {
     private static final String ALIAS_BINNING_TIME = "binning_time";
 
     private final HealthDataResolver healthDataResolver;
-    private final StepCountObserver stepCountObserver;
+    private final HealthDataStore healthDataStore;
 
     static {
         TODAY_START_UTC_TIME = getTodayStartUtcTime();
@@ -53,66 +53,101 @@ public class StepCountReader {
         return today.getTimeInMillis();
     }
 
-    public StepCountReader(HealthDataStore store, StepCountObserver observer) {
+    public StepCountReader(HealthDataStore store) {
+        healthDataStore = store;
         healthDataResolver = new HealthDataResolver(store, null);
-        stepCountObserver = observer;
     }
 
     // Get the daily total step count of a specified day
     public void requestDailyStepCount(long startTime) {
         if (startTime >= TODAY_START_UTC_TIME) {
             // Get today step count
-            readStepCount(startTime);
+            readStepCount(startTime, null);
         } else {
             // Get historical step count
-            readStepDailyTrend(startTime);
+            readStepDailyTrend(startTime, null);
         }
     }
 
-    private void readStepCount(final long startTime) {
+    public List<String> getDevicesUuid() {
+
+        HealthDeviceManager healthDeviceManager = new HealthDeviceManager(healthDataStore);
+        List<HealthDevice> healthDeviceList = healthDeviceManager.getAllDevices();
+        List<String> uuidList = new ArrayList<String>();
+
+        Log.d(Helper.DEBUG_TAG, "samsung health device list: ");
+
+        for (HealthDevice device: healthDeviceList) {
+            Log.d(Helper.DEBUG_TAG, "name: " + device.getCustomName());
+            Log.d(Helper.DEBUG_TAG, "uuid: " + device.getUuid());
+            Log.d(Helper.DEBUG_TAG, "group: " + device.getGroup());
+            Log.d(Helper.DEBUG_TAG, "model: " + device.getModel());
+            Log.d(Helper.DEBUG_TAG, "==============================");
+
+            if (device.getGroup() == 360003) {
+                uuidList.add(device.getUuid());
+            }
+        }
+
+        Log.d(Helper.DEBUG_TAG, "uuids: " + uuidList);
+
+        return uuidList;
+    }
+
+    public void readStepCount(final long startTime, Consumer<StepDailyTrend> onSuccess) {
 
         // Get sum of step counts by device
         HealthDataResolver.AggregateRequest request = new HealthDataResolver.AggregateRequest.Builder()
                 .setDataType(HealthConstants.StepCount.HEALTH_DATA_TYPE)
-                .addFunction(HealthDataResolver.AggregateRequest.AggregateFunction.SUM, HealthConstants.StepCount.COUNT, ALIAS_TOTAL_COUNT)
+                .addFunction(HealthDataResolver.AggregateRequest.AggregateFunction.SUM, HealthConstants.StepCount.COUNT, HealthConstants.StepCount.COUNT)
+                .addFunction(HealthDataResolver.AggregateRequest.AggregateFunction.SUM, HealthConstants.StepCount.CALORIE, HealthConstants.StepCount.CALORIE)
+                .addFunction(HealthDataResolver.AggregateRequest.AggregateFunction.SUM, HealthConstants.StepCount.DISTANCE, HealthConstants.StepCount.DISTANCE)
+                .addFunction(HealthDataResolver.AggregateRequest.AggregateFunction.SUM, HealthConstants.StepCount.SPEED, HealthConstants.StepCount.SPEED)
                 .addGroup(HealthConstants.StepCount.DEVICE_UUID, ALIAS_DEVICE_UUID)
                 .setLocalTimeRange(HealthConstants.StepCount.START_TIME, HealthConstants.StepCount.TIME_OFFSET,
                         startTime, startTime + ONE_DAY)
                 .setSort(ALIAS_TOTAL_COUNT, HealthDataResolver.SortOrder.DESC)
+//                .setSourceDevices(getDevicesUuid()) // to filter selected device
                 .build();
 
         try {
             healthDataResolver.aggregate(request).setResultListener(result -> {
-                int totalCount = 0;
+                StepDailyTrend stepDailyTrend = new StepDailyTrend();
                 String deviceUuid = null;
 
                 try {
                     Iterator<HealthData> iterator = result.iterator();
                     if (iterator.hasNext()) {
                         HealthData data = iterator.next();
-                        totalCount = data.getInt(ALIAS_TOTAL_COUNT);
-                        deviceUuid = data.getString(ALIAS_DEVICE_UUID);
+                        stepDailyTrend = new StepDailyTrend(
+                                data.getInt(HealthConstants.StepCount.COUNT),
+                                data.getDouble(HealthConstants.StepCount.CALORIE),
+                                data.getDouble(HealthConstants.StepCount.SPEED),
+                                data.getDouble(HealthConstants.StepCount.DISTANCE),
+                                null);
+                        deviceUuid = data.getString(HealthConstants.StepCount.UUID);
+                        Log.d(Helper.DEBUG_TAG, "got health data " + data.getContentValues().valueSet().toString());
                     }
                 } finally {
                     result.close();
                 }
 
-                if (stepCountObserver != null) {
-                    stepCountObserver.onChanged(totalCount);
+                if (onSuccess != null) {
+                    onSuccess.accept(stepDailyTrend);
                 }
 
                 if (deviceUuid != null) {
                     readStepCountBinning(startTime, deviceUuid);
                 }
 
-                Log.d(Helper.DEBUG_TAG, "Getting step count success " + totalCount);
+                Log.d(Helper.DEBUG_TAG, "Getting step count success " + stepDailyTrend.getTotalStep() + " - " + stepDailyTrend.getTotalCalorie());
             });
         } catch (Exception e) {
             Log.e(Helper.ERROR_TAG, "Getting step count fails.", e);
         }
     }
 
-    private void readStepDailyTrend(final long startTime) {
+    private void readStepDailyTrend(final long startTime, Consumer<StepDailyTrend> onSuccess) {
 
         HealthDataResolver.Filter filter = HealthDataResolver.Filter.and(HealthDataResolver.Filter.eq(PROPERTY_TIME, startTime),
                 // filtering source type "combined(-2)"
@@ -120,7 +155,9 @@ public class StepCountReader {
 
         HealthDataResolver.ReadRequest request = new HealthDataResolver.ReadRequest.Builder()
                 .setDataType(STEP_SUMMARY_DATA_TYPE_NAME)
-                .setProperties(new String[]{PROPERTY_COUNT, PROPERTY_BINNING_DATA})
+                .setProperties(new String[]{
+                        PROPERTY_COUNT,
+                        PROPERTY_BINNING_DATA})
                 .setFilter(filter)
                 .build();
 
@@ -141,10 +178,16 @@ public class StepCountReader {
                     result.close();
                 }
 
-                if (stepCountObserver != null) {
-                    stepCountObserver.onChanged(totalCount);
-                    stepCountObserver.onBinningDataChanged(binningDataList);
+                if (onSuccess != null) {
+                    onSuccess.accept(new StepDailyTrend(
+                            totalCount,
+                            null,
+                            null,
+                            null,
+                            binningDataList));
                 }
+
+                Log.d(Helper.DEBUG_TAG, "Getting daily step trend success " + totalCount);
 
             });
         } catch (Exception e) {
@@ -183,9 +226,9 @@ public class StepCountReader {
                         }
                     }
 
-                    if (stepCountObserver != null) {
-                        stepCountObserver.onBinningDataChanged(binningCountArray);
-                    }
+//                    if (stepCountObserver != null) {
+//                        stepCountObserver.onBinningDataChanged(binningCountArray);
+//                    }
 
                 } finally {
                     result.close();
@@ -218,12 +261,6 @@ public class StepCountReader {
             this.time = time;
             this.count = count;
         }
-    }
-
-    public interface StepCountObserver {
-        void onChanged(int count);
-
-        void onBinningDataChanged(List<StepBinningData> binningCountList);
     }
 }
 

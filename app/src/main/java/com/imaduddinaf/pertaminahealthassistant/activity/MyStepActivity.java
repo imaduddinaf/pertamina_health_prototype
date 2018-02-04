@@ -56,7 +56,7 @@ public class MyStepActivity extends AppCompatActivity {
 
         // Request the connection to the health data store
         healthDataStore.connectService();
-        stepCountReader = new StepCountReader(healthDataStore, stepCountObserver);
+//        stepCountReader = new StepCountReader(healthDataStore, stepCountObserver);
     }
 
     @AfterViews
@@ -208,19 +208,6 @@ public class MyStepActivity extends AppCompatActivity {
         @Override
         public void onDisconnected() {
             Log.d(Helper.DEBUG_TAG, "onDisconnected");
-        }
-    };
-
-    // Step Count Reader
-    private final StepCountReader.StepCountObserver stepCountObserver= new StepCountReader.StepCountObserver() {
-        @Override
-        public void onChanged(int count) {
-            updateStepCountView(String.valueOf(count));
-        }
-
-        @Override
-        public void onBinningDataChanged(List<StepCountReader.StepBinningData> stepBinningDataList) {
-//            updateBinningChartView(stepBinningDataList);
         }
     };
 

@@ -68,6 +68,11 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    @Override
+    protected void afterViews() {
+        super.afterViews();
+    }
+
     @Click(R.id.container_step_count)
     void tapOnContainerStepCount(View v) {
         try {

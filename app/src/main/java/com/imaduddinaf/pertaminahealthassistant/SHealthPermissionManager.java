@@ -51,6 +51,14 @@ public class SHealthPermissionManager {
         this.onNotGotPermission = onNotGotPermission;
     }
 
+    public Runnable getOnGotPermission() {
+        return onGotPermission;
+    }
+
+    public Runnable getOnNotGotPermission() {
+        return onNotGotPermission;
+    }
+
     private void showPermissionAlarmDialog() {
         AlertDialog.Builder alert = new AlertDialog.Builder(context);
         alert.setTitle(R.string.notice)

@@ -84,11 +84,13 @@ public class MyStepFragment extends BaseFragment{
 
         // Request the connection to the health data store
         healthDataStore.connectService();
-        stepCountReader = new StepCountReader(healthDataStore, stepCountObserver);
+//        stepCountReader = new StepCountReader(healthDataStore, stepCountObserver);
     }
 
-    @AfterViews
-    public void afterViews() {
+    @Override
+    protected void afterViews() {
+        super.afterViews();
+
         tvDate.setText(Helper.getFormattedTime(currentStartTime));
 
         stepDetailListAdapter = new StepDetailListAdapter();
@@ -241,19 +243,6 @@ public class MyStepFragment extends BaseFragment{
         @Override
         public void onDisconnected() {
             Log.d(Helper.DEBUG_TAG, "onDisconnected");
-        }
-    };
-
-    // Step Count Reader
-    private final StepCountReader.StepCountObserver stepCountObserver= new StepCountReader.StepCountObserver() {
-        @Override
-        public void onChanged(int count) {
-            updateStepCountView(String.valueOf(count));
-        }
-
-        @Override
-        public void onBinningDataChanged(List<StepCountReader.StepBinningData> stepBinningDataList) {
-            updateBinningChartView(stepBinningDataList);
         }
     };
 

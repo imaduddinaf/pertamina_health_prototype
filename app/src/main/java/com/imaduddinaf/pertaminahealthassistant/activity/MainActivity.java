@@ -1,21 +1,20 @@
 package com.imaduddinaf.pertaminahealthassistant.activity;
 
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
-import android.widget.TextView;
 
 import com.imaduddinaf.pertaminahealthassistant.R;
+import com.imaduddinaf.pertaminahealthassistant.SHealthManager;
+import com.imaduddinaf.pertaminahealthassistant.SHealthPermissionManager;
+import com.imaduddinaf.pertaminahealthassistant.StepCountType;
+import com.imaduddinaf.pertaminahealthassistant.StepCountReader;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
-import com.imaduddinaf.pertaminahealthassistant.fragment.HomeFragment;
 import com.imaduddinaf.pertaminahealthassistant.fragment.HomeFragment_;
-import com.imaduddinaf.pertaminahealthassistant.fragment.ProfileFragment;
 import com.imaduddinaf.pertaminahealthassistant.fragment.ProfileFragment_;
 
 import org.androidannotations.annotations.AfterViews;
@@ -25,8 +24,10 @@ import org.androidannotations.annotations.ViewById;
 @EActivity(R.layout.activity_main)
 public class MainActivity extends BaseActivity {
 
-        private BaseFragment fragment;
+    private BaseFragment fragment;
     private FragmentManager fragmentManager;
+
+    private SHealthManager sHealthManager;
 
     @ViewById(R.id.bottom_navigation)
     public BottomNavigationView navigationView;
@@ -59,6 +60,8 @@ public class MainActivity extends BaseActivity {
         fragmentManager = getSupportFragmentManager();
         final FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.content, fragment).commit();
+
+        doAfterAppLaunch();
     }
 
     @AfterViews
@@ -68,4 +71,30 @@ public class MainActivity extends BaseActivity {
         navigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
     }
 
+    private void doAfterAppLaunch() {
+        // get samsung health permission
+        sHealthManager = new SHealthManager(
+                this,
+                this,
+                new SHealthPermissionManager(
+                        this,
+                        this,
+                        () -> {
+                            //didGotPermission
+                        },
+                        () -> {
+                            getSHealthPermission();
+                        }
+                ),
+                new StepCountType(),
+                StepCountReader.TODAY_START_UTC_TIME
+        );
+        getSHealthPermission();
+    }
+
+    private void getSHealthPermission() {
+        if (!sHealthManager.isPermissionAcquired()) {
+            sHealthManager.requestPermission();
+        }
+    }
 }

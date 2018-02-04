@@ -154,7 +154,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_above="@+id/tv_step_count"
-                        android:text="@string/yesterday"
+                        android:text="@string/today"
                         android:textAlignment="center"
                         android:textColor="@color/black"
                         android:textSize="14sp" />
