@@ -12,4 +12,8 @@ public class BaseModel implements Serializable {
 
     @SerializedName("id")
     long id;
+
+    public long getID() {
+        return id;
+    }
 }

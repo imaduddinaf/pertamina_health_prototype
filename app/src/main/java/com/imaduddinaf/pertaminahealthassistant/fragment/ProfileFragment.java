@@ -4,10 +4,22 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.facebook.drawee.view.SimpleDraweeView;
+import com.imaduddinaf.pertaminahealthassistant.Helper;
+import com.imaduddinaf.pertaminahealthassistant.UserSession;
+import com.imaduddinaf.pertaminahealthassistant.activity.MainActivity;
+import com.imaduddinaf.pertaminahealthassistant.model.BaseResponse;
+import com.imaduddinaf.pertaminahealthassistant.model.SimpleUserStep;
+import com.imaduddinaf.pertaminahealthassistant.model.User;
+import com.imaduddinaf.pertaminahealthassistant.model.UserStep;
+import com.imaduddinaf.pertaminahealthassistant.model.UserStepTrend;
+import com.imaduddinaf.pertaminahealthassistant.network.APICallback;
+import com.imaduddinaf.pertaminahealthassistant.network.service.StepsService;
 import com.imaduddinaf.pertaminahealthassistant.shealth.reader.HeartRateReader;
 import com.imaduddinaf.pertaminahealthassistant.shealth.reader.SleepReader;
 import com.imaduddinaf.pertaminahealthassistant.shealth.reader.WeightReader;
@@ -28,6 +40,10 @@ import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * Created by Imaduddin Al Fikri on 31-Jan-18.
@@ -35,6 +51,22 @@ import java.text.DecimalFormat;
 
 @EFragment(R.layout.fragment_profile)
 public class ProfileFragment extends BaseFragment {
+
+    @ViewById(R.id.container_profile_all)
+    LinearLayout containerProfileAll;
+
+    // User Profile
+    @ViewById(R.id.container_user)
+    RelativeLayout containerUser;
+
+    @ViewById(R.id.tv_user_name)
+    TextView tvUserName;
+
+    @ViewById(R.id.tv_user_level)
+    TextView tvUserLevel;
+
+    @ViewById(R.id.iv_user_image)
+    SimpleDraweeView ivUserImage;
 
     // Step & calorie cards
     @ViewById(R.id.container_step_calorie)
@@ -94,6 +126,15 @@ public class ProfileFragment extends BaseFragment {
     private WeightReader weightReader;
     private SleepReader sleepReader;
 
+    private Integer stepCount = 0;
+    private Integer calorieCount = 0;
+    private Integer lastStepCount = 0;
+    private Integer lastCalorieCount = 0;
+    private Integer heartRate = 0;
+    private Integer avgHeartRate = 0;
+    private Integer weightAmount = 0;
+    private Double sleepAmount = 0.0;
+
     public ProfileFragment() {
         // Required empty public constructor
     }
@@ -125,6 +166,8 @@ public class ProfileFragment extends BaseFragment {
         sleepReader= new SleepReader(sHealthManager.getHealthDataStore());
 
         sHealthTrackerManager = new SHealthTrackerManager(this.getContext());
+
+        requestYesterdaySteps();
     }
 
     @Override
@@ -132,6 +175,7 @@ public class ProfileFragment extends BaseFragment {
         super.afterViews();
 
         connectServices();
+        setupUser();
     }
 
     @Override
@@ -150,6 +194,29 @@ public class ProfileFragment extends BaseFragment {
         } else {
             connectServices();
         }
+
+        requestYesterdaySteps();
+        setupUser();
+    }
+
+    @Override
+    public String getCustomTitle() {
+        return "Profil";
+    }
+
+    private void setupUser() {
+        if (UserSession.instance().isLoggedIn()) {
+            User user = UserSession.instance().getUser();
+
+            containerProfileAll.setVisibility(View.VISIBLE);
+
+            tvUserName.setText(user.getName());
+            tvUserLevel.setText(user.getLevel());
+
+            ivUserImage.setImageURI(user.getProfilePhotoURL());
+        } else {
+            containerProfileAll.setVisibility(View.GONE);
+        }
     }
 
     private void connectServices() {
@@ -160,6 +227,22 @@ public class ProfileFragment extends BaseFragment {
         sHealthManager.disconnectService();
     }
 
+    private void refreshView() {
+        if (!isAfterViewsOrInjection()) return;
+
+        tvStepCount.setText(Helper.getStringOrEmpty(stepCount));
+        tvCalorieCount.setText(Helper.getStringOrEmpty(calorieCount));
+
+        tvLastStepCount.setText(Helper.getStringOrEmpty(lastStepCount));
+        tvLastCalorieCount.setText(Helper.getStringOrEmpty(lastCalorieCount));
+
+        tvAvgHeartRateCount.setText(Helper.getStringOrEmpty(avgHeartRate));
+        tvHeartRateCount.setText(Helper.getStringOrEmpty(heartRate));
+
+        tvWeightCount.setText(Helper.getStringOrEmpty(weightAmount));
+        tvSleepCount.setText(Helper.getStringOrEmpty(sleepAmount));
+    }
+
     private void requestAllData() {
         requestStepCount();
         requestHeartRate();
@@ -167,60 +250,79 @@ public class ProfileFragment extends BaseFragment {
         requestSleep();
     }
 
+    private void requestYesterdaySteps() {
+        if (!UserSession.instance().isLoggedIn()) return;
+
+        User user = UserSession.instance().getUser();
+
+        // request yesterday step
+        StepsService.instance()
+                .getTrend(user.getID(), 2)
+                .enqueue(new APICallback<BaseResponse<UserStepTrend>>() {
+                    @Override
+                    public void onResponse(Call<BaseResponse<UserStepTrend>> call, Response<BaseResponse<UserStepTrend>> response) {
+                        super.onResponse(call, response);
+
+                        if (response.body() != null &&
+                                response.body().getData() != null &&
+                                response.body().getData().getUserSteps() != null) {
+                            ArrayList<UserStep> steps = response.body().getData().getUserSteps();
+
+                            if (steps.size() == 2) {
+                                lastStepCount = steps.get(1).getStep();
+                                lastCalorieCount = steps.get(1).getCalorie();
+                            }
+
+                            refreshView();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<UserStepTrend>> call, Throwable t) {
+                        super.onFailure(call, t);
+                        // empty on failure
+                    }
+                });
+    }
+
     private void requestStepCount() {
         stepCountReader.readStepCount(Constant.today(), stepDailyTrend -> {
-            if (isAfterViewsOrInjection()) {
-                String step = stepDailyTrend.getTotalStep() > 0 ? "" + stepDailyTrend.getTotalStep() : "-";
-                String calorie = stepDailyTrend.getTotalCalorie() > 0 ? "" + stepDailyTrend.getTotalCalorie().intValue() : "-";
+            stepCount = stepDailyTrend.getTotalStep();
+            calorieCount = stepDailyTrend.getTotalCalorie().intValue();
 
-                tvStepCount.setText(step);
-                tvCalorieCount.setText(calorie);
-            }
-        });
+            UserSession.instance().updateSteps(stepDailyTrend);
 
-        stepCountReader.readStepCount(Constant.yesterday(), stepDailyTrend -> {
-            if (isAfterViewsOrInjection()) {
-                String step = stepDailyTrend.getTotalStep() > 0 ? "" + stepDailyTrend.getTotalStep() : "-";
-                String calorie = stepDailyTrend.getTotalCalorie() > 0 ? "" + stepDailyTrend.getTotalCalorie().intValue() : "-";
-
-                tvLastStepCount.setText(step);
-                tvLastCalorieCount.setText(calorie);
-            }
+            refreshView();
         });
     }
 
     private void requestHeartRate() {
         heartRateReader.readTotalHeartRate(Constant.today(), Constant.endOfToday(), heartRateData -> {
-            if (isAfterViewsOrInjection()) {
-                String text = heartRateData.getHeartRate() > 0 ? "" + heartRateData.getHeartRate().intValue() : "-";
-                tvAvgHeartRateCount.setText(text);
-            }
+            avgHeartRate = heartRateData.getHeartRate().intValue();
+
+            refreshView();
         });
 
         heartRateReader.readLastHeartRate(Constant.lastMonth(), Constant.endOfToday(), heartRate -> {
-            if (isAfterViewsOrInjection()) {
-                String text = heartRate > 0 ? "" + heartRate.intValue() : "-";
-                tvHeartRateCount.setText(text);
-            }
+            this.heartRate = heartRate.intValue();
+
+            refreshView();
         });
     }
 
     private void requestWeight() {
         weightReader.readLastWeight(Constant.lastMonth(), Constant.endOfToday(), lastWeight -> {
-            if (isAfterViewsOrInjection()) {
-                String text = lastWeight > 0 ? "" + lastWeight.intValue() : "-";
-                tvWeightCount.setText(text);
-            }
+            weightAmount = lastWeight.intValue();
+
+            refreshView();
         });
     }
 
     private void requestSleep() {
         sleepReader.readLastSleep(Constant.lastMonth(), Constant.endOfToday(), sleepTime -> {
-            if (isAfterViewsOrInjection()) {
-                DecimalFormat decimalFormat = new DecimalFormat("#.#");
-                String text = sleepTime > 0 ? decimalFormat.format(sleepTime) : "-";
-                tvSleepCount.setText(text);
-            }
+            sleepAmount = sleepTime;
+
+            refreshView();
         });
     }
 
@@ -252,5 +354,25 @@ public class ProfileFragment extends BaseFragment {
     @Click(R.id.container_sleep)
     void tapOnContainerSleep(View v) {
         sHealthTrackerManager.startActivity(this.getContext(), v, TrackerManager.TrackerId.SLEEP);
+    }
+
+    @Click(R.id.button_sickness)
+    void tapOnSicknessHistory(View v) {
+        Helper.showUnderConstructionToast(this.getActivityHolder());
+    }
+
+    @Click(R.id.button_options)
+    void tapOnOptions(View v) {
+        Helper.showUnderConstructionToast(this.getActivityHolder());
+    }
+
+    @Click(R.id.button_logout)
+    void tapOnLogout(View v) {
+        UserSession.instance().logout(this.getActivityHolder());
+        Helper.showMessage(this.getActivityHolder(), "Logout berhasil");
+
+        MainActivity mainActivity = (MainActivity) this.getActivityHolder();
+        View homeAction = mainActivity.navigationView.findViewById(R.id.navigation_home);
+        homeAction.performClick();
     }
 }

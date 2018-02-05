@@ -13,6 +13,7 @@
     <!-- Label -->
     <string name="today">Hari ini</string>
     <string name="yesterday">Kemarin</string>
+    <string name="average">Rata-rata</string>
 
     <!-- Step -->
     <string name="daily_step_title">Daily Step Count</string>
@@ -39,6 +40,12 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
 
+    <!-- Menu -->
+    <string name="right_arrow">></string>
+    <string name="sickness">Riwayat penyakit</string>
+    <string name="options">Pengaturan</string>
+    <string name="logout">Logout</string>
+
     <string name="connect_to_shealth">Connect to Samsung Health</string>
 
     <string name="notice">Notice</string>
@@ -49,4 +56,11 @@
     <string name="msg_req_enable">Please enable Samsung Health</string>
     <string name="msg_req_agree">Please agree with Samsung Health policy</string>
     <string name="msg_req_available">Please make Samsung Health available</string>
+    <string name="title_activity_login">Sign in</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_username">Username</string>
+    <string name="prompt_password">Password</string>
+    <string name="login_button">Log in</string>
+    <string name="register_button">Register</string>
 </resources>

@@ -48,21 +48,12 @@ public class SHealthReader {
         List<HealthDevice> healthDeviceList = healthDeviceManager.getAllDevices();
         List<String> uuidList = new ArrayList<String>();
 
-        Log.d(Constant.DEBUG_TAG, "samsung health device list: ");
-
         for (HealthDevice device: healthDeviceList) {
-            Log.d(Constant.DEBUG_TAG, "name: " + device.getCustomName());
-            Log.d(Constant.DEBUG_TAG, "uuid: " + device.getUuid());
-            Log.d(Constant.DEBUG_TAG, "group: " + device.getGroup());
-            Log.d(Constant.DEBUG_TAG, "model: " + device.getModel());
-            Log.d(Constant.DEBUG_TAG, "==============================");
 
             if (device.getGroup() == deviceType) {
                 uuidList.add(device.getUuid());
             }
         }
-
-        Log.d(Constant.DEBUG_TAG, "uuids: " + uuidList);
 
         return uuidList;
     }

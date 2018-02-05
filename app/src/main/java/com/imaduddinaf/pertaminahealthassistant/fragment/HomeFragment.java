@@ -1,18 +1,45 @@
 package com.imaduddinaf.pertaminahealthassistant.fragment;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.imaduddinaf.pertaminahealthassistant.Constant;
+import com.imaduddinaf.pertaminahealthassistant.Helper;
 import com.imaduddinaf.pertaminahealthassistant.R;
+import com.imaduddinaf.pertaminahealthassistant.UserSession;
+import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
+import com.imaduddinaf.pertaminahealthassistant.model.BaseResponse;
+import com.imaduddinaf.pertaminahealthassistant.model.SimpleUserAverageStep;
+import com.imaduddinaf.pertaminahealthassistant.model.SimpleUserStep;
+import com.imaduddinaf.pertaminahealthassistant.model.User;
+import com.imaduddinaf.pertaminahealthassistant.model.UserStep;
+import com.imaduddinaf.pertaminahealthassistant.model.UserStepTrend;
+import com.imaduddinaf.pertaminahealthassistant.network.APICallback;
+import com.imaduddinaf.pertaminahealthassistant.network.APIManager;
+import com.imaduddinaf.pertaminahealthassistant.network.service.AuthService;
+import com.imaduddinaf.pertaminahealthassistant.network.service.FactService;
+import com.imaduddinaf.pertaminahealthassistant.network.service.StepsService;
+import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthManager;
+import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthPermissionManager;
 import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthTrackerManager;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.StepCountReader;
+import com.imaduddinaf.pertaminahealthassistant.shealth.type.BaseSHealthType;
 import com.samsung.android.sdk.shealth.tracker.TrackerManager;
 
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
+
+import java.sql.Date;
+import java.time.LocalDate;
+import java.util.ArrayList;
+
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * Created by Imaduddin Al Fikri on 31-Jan-18.
@@ -21,16 +48,42 @@ import org.androidannotations.annotations.ViewById;
 @EFragment(R.layout.fragment_home)
 public class HomeFragment extends BaseFragment {
 
+    // Step count
     @ViewById(R.id.container_step_count)
     LinearLayout containerStepCount;
 
-    @ViewById(R.id.tv_last_step_count)
-    TextView tvLastStepCount;
+    @ViewById(R.id.tv_current_step_count)
+    TextView tvCurrentStepCount;
 
-    @ViewById(R.id.tv_step_count)
-    TextView tvStepCount;
+    @ViewById(R.id.tv_avg_step_count)
+    TextView tvAvgStepCount;
 
+    // Chart
+    @ViewById(R.id.container_chart_step)
+    LinearLayout containerChartStep;
+
+    // Today fact
+    @ViewById(R.id.container_today_fact)
+    LinearLayout containerTodayFact;
+
+    @ViewById(R.id.tv_today_fact)
+    TextView tvTodayFact;
+
+    // Leaderboard
+    @ViewById(R.id.container_leaderboard)
+    LinearLayout containerLeaderboard;
+
+    private SHealthManager sHealthManager;
     private SHealthTrackerManager sHealthTrackerManager = null;
+    private StepCountReader stepCountReader;
+
+    private String todayFact = "";
+    private Integer todayAllAvgStep = 0;
+    private Integer todayStep = 0;
+    private Integer yesterdayStep = 0;
+    private UserStepTrend stepTrendAll;
+    private ArrayList<UserStep> topSteps = new ArrayList<>();
+    private ArrayList<UserStep> yesterdayTopSteps = new ArrayList<>();
 
     public HomeFragment() {
         // Required empty public constructor
@@ -40,16 +93,242 @@ public class HomeFragment extends BaseFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        sHealthManager = new SHealthManager(
+                this.getContext(),
+                (BaseActivity) this.getActivity(),
+                new SHealthPermissionManager(this.getContext(),
+                        (BaseActivity) this.getActivity(),
+                        () -> {
+                            //didGotPermission
+                            requestTodayStep();
+                        },
+                        () -> {
+                            // didNotGotPermission
+                            // empty
+                        }
+                ),
+                new BaseSHealthType()
+        );
+
+        stepCountReader = new StepCountReader(sHealthManager.getHealthDataStore());
         sHealthTrackerManager = new SHealthTrackerManager(this.getContext());
     }
 
     @Override
     protected void afterViews() {
         super.afterViews();
+
+        sHealthManager.connectService();
+        refreshView();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if (sHealthManager.isConnected() && sHealthManager.isPermissionAcquired()) {
+            requestTodayStep();
+        } else {
+            sHealthManager.connectService();
+        }
+
+        refreshRequest();
+        refreshView();
+    }
+
+    @Override
+    public void onDetach() {
+        sHealthManager.disconnectService();
+
+        super.onDetach();
     }
 
     @Click(R.id.container_step_count)
     void tapOnContainerStepCount(View v) {
         sHealthTrackerManager.startActivity(this.getContext(), v, TrackerManager.TrackerId.HEART_RATE);
+    }
+
+    private void refreshView() {
+        if (!isAfterViewsOrInjection()) return;
+
+        // current steps
+        tvAvgStepCount.setText(Helper.getStringOrEmpty(todayAllAvgStep));
+        tvCurrentStepCount.setText(Helper.getStringOrEmpty(todayStep));
+
+        // chart
+        if (stepTrendAll != null &&
+                stepTrendAll.getUserSteps() != null &&
+                !stepTrendAll.getUserSteps().isEmpty() &&
+                stepTrendAll.getAverageSteps() != null &&
+                !stepTrendAll.getAverageSteps().isEmpty()) {
+            containerChartStep.setVisibility(View.VISIBLE);
+        } else {
+            containerChartStep.setVisibility(View.GONE);
+        }
+
+        // today fact
+        if (!todayFact.isEmpty()) {
+            containerTodayFact.setVisibility(View.VISIBLE);
+            tvTodayFact.setText(todayFact);
+        } else {
+            containerTodayFact.setVisibility(View.GONE);
+        }
+
+        // leaderboard/top steps
+        if (!topSteps.isEmpty() && !yesterdayTopSteps.isEmpty()) {
+            containerLeaderboard.setVisibility(View.VISIBLE);
+        } else {
+            containerLeaderboard.setVisibility(View.GONE);
+        }
+    }
+
+    private void requestTodayStep() {
+        stepCountReader.readStepCount(Constant.today(), stepDailyTrend -> {
+            todayStep = stepDailyTrend.getTotalStep();
+            UserSession.instance().updateSteps(stepDailyTrend);
+
+            refreshView();
+        });
+    }
+
+    private void refreshRequest() {
+        // request average of all
+        Log.d(Constant.DEBUG_TAG, "today: " + Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME));
+        StepsService.instance()
+                .getAvgAll(Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME))
+                .enqueue(new APICallback<BaseResponse<SimpleUserAverageStep>>() {
+                    @Override
+                    public void onResponse(Call<BaseResponse<SimpleUserAverageStep>> call, Response<BaseResponse<SimpleUserAverageStep>> response) {
+                        super.onResponse(call, response);
+                        if (response.body() != null &&
+                                response.body().getData() != null &&
+                                response.body().getData().getAverage() != null) {
+                            todayAllAvgStep = response.body().getData().getAverage().intValue();
+                            refreshView();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<SimpleUserAverageStep>> call, Throwable t) {
+                        super.onFailure(call, t);
+                        // empty on failure
+                    }
+                });
+
+        // request today's leaderboard
+        StepsService.instance()
+                .getLeaderboard(Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME))
+                .enqueue(new APICallback<BaseResponse<ArrayList<UserStep>>>() {
+                    @Override
+                    public void onResponse(Call<BaseResponse<ArrayList<UserStep>>> call, Response<BaseResponse<ArrayList<UserStep>>> response) {
+                        super.onResponse(call, response);
+                        if (response.body() != null && response.body().getData() != null) {
+                            topSteps = response.body().getData();
+                            refreshView();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<ArrayList<UserStep>>> call, Throwable t) {
+                        super.onFailure(call, t);
+                        // empty on failure
+                    }
+                });
+
+        // request yesterdays's leaderboard
+        StepsService.instance()
+                .getLeaderboard(Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME - Constant.ONE_DAY))
+                .enqueue(new APICallback<BaseResponse<ArrayList<UserStep>>>() {
+                    @Override
+                    public void onResponse(Call<BaseResponse<ArrayList<UserStep>>> call, Response<BaseResponse<ArrayList<UserStep>>> response) {
+                        super.onResponse(call, response);
+                        if (response.body() != null && response.body().getData() != null) {
+                            yesterdayTopSteps = response.body().getData();
+                            refreshView();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<ArrayList<UserStep>>> call, Throwable t) {
+                        super.onFailure(call, t);
+                        // empty on failure
+                    }
+                });
+
+        // request today fact
+        FactService.instance()
+                .getFact()
+                .enqueue(new APICallback<BaseResponse<String>>() {
+                    @Override
+                    public void onResponse(Call<BaseResponse<String>> call, Response<BaseResponse<String>> response) {
+                        super.onResponse(call, response);
+                        if (response.body() != null && response.body().getData() != null) {
+                            todayFact = response.body().getData();
+                            refreshView();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<String>> call, Throwable t) {
+                        super.onFailure(call, t);
+                        // empty on failure
+                    }
+                });
+
+        if (UserSession.instance().isLoggedIn()) {
+            Log.d(Constant.DEBUG_TAG, "do request on user's");
+            User user = UserSession.instance().getUser();
+
+            // request a-month step
+            StepsService.instance()
+                    .getTrend(user.getID(), 30)
+                    .enqueue(new APICallback<BaseResponse<UserStepTrend>>() {
+                        @Override
+                        public void onResponse(Call<BaseResponse<UserStepTrend>> call, Response<BaseResponse<UserStepTrend>> response) {
+                            super.onResponse(call, response);
+                            if (response.body() != null && response.body().getData() != null) {
+                                stepTrendAll = response.body().getData();
+                                refreshView();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<BaseResponse<UserStepTrend>> call, Throwable t) {
+                            super.onFailure(call, t);
+                            // empty on failure
+                        }
+                    });
+
+            // request yesterday step
+            StepsService.instance()
+                    .getTrend(user.getID(), 2)
+                    .enqueue(new APICallback<BaseResponse<UserStepTrend>>() {
+                        @Override
+                        public void onResponse(Call<BaseResponse<UserStepTrend>> call, Response<BaseResponse<UserStepTrend>> response) {
+                            super.onResponse(call, response);
+                            Log.d(Constant.DEBUG_TAG, "got response yesterday");
+
+                            if (response.body() != null &&
+                                    response.body().getData() != null &&
+                                    response.body().getData().getUserSteps() != null) {
+                                ArrayList<UserStep> steps = response.body().getData().getUserSteps();
+                                Log.d(Constant.DEBUG_TAG, "got body response yesterday");
+
+                                if (steps.size() == 2) {
+                                    yesterdayStep = steps.get(1).getStep();
+                                    Log.d(Constant.DEBUG_TAG, "yesterday: " + yesterdayStep);
+                                }
+
+                                refreshView();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<BaseResponse<UserStepTrend>> call, Throwable t) {
+                            super.onFailure(call, t);
+                            // empty on failure
+                        }
+                    });
+        }
     }
 }

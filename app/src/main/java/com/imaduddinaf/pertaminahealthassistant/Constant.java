@@ -13,6 +13,7 @@ public class Constant {
     public static final String SHEALTH_STORE_URL = "market://details?id=com.sec.android.app.shealth";
     public static final String DEBUG_TAG = "PHA - DEBUG";
     public static final String ERROR_TAG = "PHA - ERROR";
+    public static final String DEFAULT_LOADING_MESSAGE = "Harap tunggu...";
 
     public static final long TODAY_START_UTC_TIME;
     public static final long ONE_DAY = 24 * 60 * 60 * 1000;

@@ -25,6 +25,8 @@ public class BaseFragment extends Fragment {
     @AfterViews
     protected void afterViews() {
         isAfterViewsOrInjection = true;
+
+        getActivityHolder().setTitle(getCustomTitle());
     }
 
     @Override
@@ -54,4 +56,13 @@ public class BaseFragment extends Fragment {
 
         isAfterViewsOrInjection = false;
     }
+
+    public BaseActivity getActivityHolder() {
+        return (BaseActivity) this.getActivity();
+    }
+
+    public String getCustomTitle() {
+        return getActivityHolder().getCustomTitle();
+    }
+
 }

@@ -24,45 +24,6 @@
                 android:layout_weight="1">
 
                 <TextView
-                    android:id="@+id/tv_avg_last_step_label"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:textAlignment="center"
-                    android:text="@string/yesterday"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"/>
-
-                <TextView
-                    android:id="@+id/tv_last_step_count"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:textAlignment="center"
-                    android:text="@string/loading"
-                    android:textColor="@color/black"
-                    android:textSize="30sp"/>
-
-                <TextView
-                    android:id="@+id/tv_avg_last_step_unit"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:textAlignment="center"
-                    android:text="@string/step_unit"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_margin="8dp"
-                android:layout_weight="1">
-
-                <TextView
-                    android:id="@+id/tv_avg_step_label"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
@@ -82,7 +43,42 @@
                     android:textSize="30sp"/>
 
                 <TextView
-                    android:id="@+id/tv_avg_step_unit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:textAlignment="center"
+                    android:text="@string/step_unit"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_margin="8dp"
+                android:layout_weight="1">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:textAlignment="center"
+                    android:text="@string/average"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"/>
+
+                <TextView
+                    android:id="@+id/tv_avg_step_count"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:textAlignment="center"
+                    android:text="@string/loading"
+                    android:textColor="@color/black"
+                    android:textSize="30sp"/>
+
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
@@ -110,9 +106,25 @@
             android:layout_below="@+id/container_chart_step"
             android:layout_marginTop="8dp"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
+            android:layout_height="wrap_content"
             android:background="@color/light_red"
             android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:text="Fakta hari ini?"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                />
+
+            <TextView
+                android:id="@+id/tv_today_fact"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:textColor="@color/white"/>
 
         </LinearLayout>
 
@@ -121,7 +133,7 @@
             android:layout_below="@+id/container_today_fact"
             android:layout_marginTop="8dp"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
+            android:layout_height="wrap_content"
             android:background="@color/white"
             android:orientation="vertical">
 
