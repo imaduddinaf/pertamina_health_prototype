@@ -58,7 +58,7 @@ public class StepCountReader extends SHealthReader {
                 .setLocalTimeRange(HealthConstants.StepCount.START_TIME, HealthConstants.StepCount.TIME_OFFSET,
                         startTime, startTime + Constant.ONE_DAY)
                 .setSort(ALIAS_TOTAL_COUNT, HealthDataResolver.SortOrder.DESC)
-                .setSourceDevices(getDevicesUuid())
+                .setSourceDevices(getDevicesUuid(getTypeForStepAndHeart()))
                 .build();
 
         try {
@@ -110,6 +110,7 @@ public class StepCountReader extends SHealthReader {
                         PROPERTY_COUNT,
                         PROPERTY_BINNING_DATA})
                 .setFilter(filter)
+                .setSourceDevices(getDevicesUuid(getTypeForStepAndHeart()))
                 .build();
 
         try {
@@ -161,6 +162,7 @@ public class StepCountReader extends SHealthReader {
                         startTime, startTime + Constant.ONE_DAY)
                 .setFilter(filter)
                 .setSort(ALIAS_BINNING_TIME, HealthDataResolver.SortOrder.ASC)
+                .setSourceDevices(getDevicesUuid(getTypeForStepAndHeart()))
                 .build();
 
         try {

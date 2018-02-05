@@ -32,4 +32,20 @@ public class Constant {
 
         return today.getTimeInMillis();
     }
+
+    public static long today() {
+        return TODAY_START_UTC_TIME;
+    }
+
+    public static long yesterday() {
+        return today() - ONE_DAY;
+    }
+
+    public static long endOfToday() {
+        return today() + ONE_DAY;
+    }
+
+    public static long lastMonth() {
+        return today() - (30 * ONE_DAY);
+    }
 }

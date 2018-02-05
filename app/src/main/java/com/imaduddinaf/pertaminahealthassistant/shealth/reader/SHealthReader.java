@@ -22,12 +22,27 @@ public class SHealthReader {
     protected HealthDataResolver healthDataResolver;
     protected HealthDataStore healthDataStore;
 
+    public static class DeviceType {
+        public static final Integer ALL = 0;
+        public static final Integer GEAR = 360003;
+        public static final Integer PHONE = 360001;
+
+    }
+
     public SHealthReader(HealthDataStore store) {
         healthDataStore = store;
         healthDataResolver = new HealthDataResolver(store, null);
     }
 
-    public List<String> getDevicesUuid() {
+    public Integer getTypeForStepAndHeart() {
+        return DeviceType.GEAR;
+    }
+
+    public Integer getTypeForOthers() {
+        return DeviceType.PHONE;
+    }
+
+    public List<String> getDevicesUuid(Integer deviceType) {
 
         HealthDeviceManager healthDeviceManager = new HealthDeviceManager(healthDataStore);
         List<HealthDevice> healthDeviceList = healthDeviceManager.getAllDevices();
@@ -42,12 +57,9 @@ public class SHealthReader {
             Log.d(Constant.DEBUG_TAG, "model: " + device.getModel());
             Log.d(Constant.DEBUG_TAG, "==============================");
 
-            uuidList.add(device.getUuid());
-
-            // only Gear S3
-//            if (device.getGroup() == 360003) {
-//                uuidList.add(device.getUuid());
-//            }
+            if (device.getGroup() == deviceType) {
+                uuidList.add(device.getUuid());
+            }
         }
 
         Log.d(Constant.DEBUG_TAG, "uuids: " + uuidList);

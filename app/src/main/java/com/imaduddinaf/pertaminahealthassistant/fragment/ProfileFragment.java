@@ -9,6 +9,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.imaduddinaf.pertaminahealthassistant.shealth.reader.HeartRateReader;
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.SleepReader;
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.WeightReader;
 import com.imaduddinaf.pertaminahealthassistant.shealth.type.BaseSHealthType;
 import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthManager;
@@ -24,6 +26,8 @@ import com.samsung.android.sdk.shealth.tracker.TrackerManager;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
+
+import java.text.DecimalFormat;
 
 /**
  * Created by Imaduddin Al Fikri on 31-Jan-18.
@@ -87,8 +91,8 @@ public class ProfileFragment extends BaseFragment {
     // Reader
     private StepCountReader stepCountReader;
     private HeartRateReader heartRateReader;
-//    private StepCountReader stepCountReader;
-//    private StepCountReader stepCountReader;
+    private WeightReader weightReader;
+    private SleepReader sleepReader;
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -117,6 +121,8 @@ public class ProfileFragment extends BaseFragment {
 
         stepCountReader = new StepCountReader(sHealthManager.getHealthDataStore());
         heartRateReader= new HeartRateReader(sHealthManager.getHealthDataStore());
+        weightReader = new WeightReader(sHealthManager.getHealthDataStore());
+        sleepReader= new SleepReader(sHealthManager.getHealthDataStore());
 
         sHealthTrackerManager = new SHealthTrackerManager(this.getContext());
     }
@@ -157,39 +163,63 @@ public class ProfileFragment extends BaseFragment {
     private void requestAllData() {
         requestStepCount();
         requestHeartRate();
+        requestWeight();
+        requestSleep();
     }
 
     private void requestStepCount() {
-        long today = Constant.TODAY_START_UTC_TIME;
-        long yesterday = today - Constant.ONE_DAY;
-
-        stepCountReader.readStepCount(today, stepDailyTrend -> {
+        stepCountReader.readStepCount(Constant.today(), stepDailyTrend -> {
             if (isAfterViewsOrInjection()) {
-                tvStepCount.setText("" + stepDailyTrend.getTotalStep());
-                tvCalorieCount.setText("" + stepDailyTrend.getTotalCalorie().intValue());
+                String step = stepDailyTrend.getTotalStep() > 0 ? "" + stepDailyTrend.getTotalStep() : "-";
+                String calorie = stepDailyTrend.getTotalCalorie() > 0 ? "" + stepDailyTrend.getTotalCalorie().intValue() : "-";
+
+                tvStepCount.setText(step);
+                tvCalorieCount.setText(calorie);
             }
         });
 
-        stepCountReader.readStepCount(yesterday, stepDailyTrend -> {
+        stepCountReader.readStepCount(Constant.yesterday(), stepDailyTrend -> {
             if (isAfterViewsOrInjection()) {
-                tvLastStepCount.setText("" + stepDailyTrend.getTotalStep());
-                tvLastCalorieCount.setText("" + stepDailyTrend.getTotalCalorie().intValue());
+                String step = stepDailyTrend.getTotalStep() > 0 ? "" + stepDailyTrend.getTotalStep() : "-";
+                String calorie = stepDailyTrend.getTotalCalorie() > 0 ? "" + stepDailyTrend.getTotalCalorie().intValue() : "-";
+
+                tvLastStepCount.setText(step);
+                tvLastCalorieCount.setText(calorie);
             }
         });
     }
 
     private void requestHeartRate() {
-        long startTime = Constant.TODAY_START_UTC_TIME;
-        long endTime = startTime + Constant.ONE_DAY;
-        heartRateReader.readTotalHeartRate(startTime, endTime, heartRateData -> {
+        heartRateReader.readTotalHeartRate(Constant.today(), Constant.endOfToday(), heartRateData -> {
             if (isAfterViewsOrInjection()) {
-                tvAvgHeartRateCount.setText("" + heartRateData.getHeartRate().intValue());
+                String text = heartRateData.getHeartRate() > 0 ? "" + heartRateData.getHeartRate().intValue() : "-";
+                tvAvgHeartRateCount.setText(text);
             }
         });
 
-        heartRateReader.readLastHeartRate(startTime, endTime, heartRate -> {
+        heartRateReader.readLastHeartRate(Constant.lastMonth(), Constant.endOfToday(), heartRate -> {
             if (isAfterViewsOrInjection()) {
-                tvHeartRateCount.setText("" + heartRate.intValue());
+                String text = heartRate > 0 ? "" + heartRate.intValue() : "-";
+                tvHeartRateCount.setText(text);
+            }
+        });
+    }
+
+    private void requestWeight() {
+        weightReader.readLastWeight(Constant.lastMonth(), Constant.endOfToday(), lastWeight -> {
+            if (isAfterViewsOrInjection()) {
+                String text = lastWeight > 0 ? "" + lastWeight.intValue() : "-";
+                tvWeightCount.setText(text);
+            }
+        });
+    }
+
+    private void requestSleep() {
+        sleepReader.readLastSleep(Constant.lastMonth(), Constant.endOfToday(), sleepTime -> {
+            if (isAfterViewsOrInjection()) {
+                DecimalFormat decimalFormat = new DecimalFormat("#.#");
+                String text = sleepTime > 0 ? decimalFormat.format(sleepTime) : "-";
+                tvSleepCount.setText(text);
             }
         });
     }

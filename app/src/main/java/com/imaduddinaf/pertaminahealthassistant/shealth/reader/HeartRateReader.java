@@ -16,10 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Created by Imaduddin Al Fikri on 04-Feb-18.
- */
-
 public class HeartRateReader extends SHealthReader {
 
     public HeartRateReader(HealthDataStore store) {
@@ -36,6 +32,7 @@ public class HeartRateReader extends SHealthReader {
                 .setTimeAfter(startTime)
                 .setTimeBefore(endTime)
                 .setSort(HealthConstants.HeartRate.START_TIME, HealthDataResolver.SortOrder.DESC)
+                .setSourceDevices(getDevicesUuid(getTypeForStepAndHeart()))
                 .build();
 
         try {
@@ -46,7 +43,7 @@ public class HeartRateReader extends SHealthReader {
                     if (iterator.hasNext()) {
                         HealthData data = iterator.next();
                         lastHeartRate = data.getDouble(HealthConstants.HeartRate.HEART_RATE);
-                        Log.d(Constant.DEBUG_TAG, "Got heart rate binning " + data.getContentValues().valueSet().toString());
+                        Log.d(Constant.DEBUG_TAG, "Got last heart rate" + data.getContentValues().valueSet().toString());
                     }
                 } finally {
                     result.close();
@@ -55,10 +52,10 @@ public class HeartRateReader extends SHealthReader {
                 if (onSuccess != null) {
                     onSuccess.accept(lastHeartRate);
                 }
-                Log.d(Constant.DEBUG_TAG, "Getting heart rate binning success ");
+                Log.d(Constant.DEBUG_TAG, "Getting last heart rate success ");
             });
         } catch (Exception e) {
-            Log.e(Constant.ERROR_TAG, "Getting heart rate binning fails.", e);
+            Log.e(Constant.ERROR_TAG, "Getting last heart rate fails.", e);
         }
     }
 
@@ -77,7 +74,7 @@ public class HeartRateReader extends SHealthReader {
                         HealthConstants.HeartRate.TIME_OFFSET,
                         startTime,
                         endTime)
-                .setSourceDevices(getDevicesUuid())
+                .setSourceDevices(getDevicesUuid(getTypeForStepAndHeart()))
                 .build();
 
         try {
