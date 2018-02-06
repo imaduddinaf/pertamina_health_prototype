@@ -26,6 +26,7 @@ public class Helper {
 
     public static class DateFormat {
         public static String SIMPLE_REVERSED_WITH_DASH = "yyyy-MM-dd";
+        public static String COMPLETE = "EEEE, d MMMM yyyy";
     }
 
     public static String[] concat(String[] first, String second[]) {
@@ -41,7 +42,7 @@ public class Helper {
     }
 
     public static String getFormattedTime(long time, String format) {
-        final SimpleDateFormat dateFormat = new SimpleDateFormat(format != null && format.isEmpty() ? format : DateFormat.SIMPLE_REVERSED_WITH_DASH, Locale.US);
+        final SimpleDateFormat dateFormat = new SimpleDateFormat(format != null && !format.isEmpty() ? format : DateFormat.SIMPLE_REVERSED_WITH_DASH, Locale.forLanguageTag("id-ID"));
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateFormat.format(time);
     }
@@ -93,7 +94,12 @@ public class Helper {
     }
 
     public static String getStringOrEmpty(Integer value) {
-        return value > 0 ? value.toString() : "-";
+        return getStringOrEmpty(value, null);
+    }
+
+    public static String getStringOrEmpty(Integer value, String tail) {
+        String displayedTail = tail == null || tail.isEmpty() ? "" : " " + tail;
+        return value != null && value > 0 ? value.toString() + displayedTail : "-";
     }
 
     public static String getStringOrEmpty(Double value) {
@@ -101,7 +107,13 @@ public class Helper {
     }
 
     public static String getStringOrEmpty(Double value, String format) {
+        return getStringOrEmpty(value, format, null);
+    }
+
+    public static String getStringOrEmpty(Double value, String format, String tail) {
+        String displayedTail = tail == null || tail.isEmpty() ? "" : " " + tail;
         DecimalFormat decimalFormat = new DecimalFormat(format != null && !format.isEmpty() ? format : "#.#");
-        return value > 0 ? decimalFormat.format(value) : "-";
+
+        return value > 0 ? decimalFormat.format(value) + displayedTail : "-";
     }
 }

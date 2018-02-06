@@ -174,13 +174,13 @@ public class ProfileFragment extends BaseFragment {
     protected void afterViews() {
         super.afterViews();
 
-        connectServices();
+        sHealthManager.connectService();
         setupUser();
     }
 
     @Override
     public void onDetach() {
-        disconnectServices();
+        sHealthManager.disconnectService();
 
         super.onDetach();
     }
@@ -192,7 +192,7 @@ public class ProfileFragment extends BaseFragment {
         if (sHealthManager.isConnected() && sHealthManager.isPermissionAcquired()) {
             requestAllData();
         } else {
-            connectServices();
+            sHealthManager.connectService();
         }
 
         requestYesterdaySteps();
@@ -217,14 +217,6 @@ public class ProfileFragment extends BaseFragment {
         } else {
             containerProfileAll.setVisibility(View.GONE);
         }
-    }
-
-    private void connectServices() {
-        sHealthManager.connectService();
-    }
-
-    private void disconnectServices() {
-        sHealthManager.disconnectService();
     }
 
     private void refreshView() {
@@ -257,28 +249,22 @@ public class ProfileFragment extends BaseFragment {
 
         // request yesterday step
         StepsService.instance()
-                .getTrend(user.getID(), 2)
-                .enqueue(new APICallback<BaseResponse<UserStepTrend>>() {
+                .getStep(user.getID(), Helper.getFormattedTime(Constant.yesterday()))
+                .enqueue(new APICallback<BaseResponse<UserStep>>() {
                     @Override
-                    public void onResponse(Call<BaseResponse<UserStepTrend>> call, Response<BaseResponse<UserStepTrend>> response) {
+                    public void onResponse(Call<BaseResponse<UserStep>> call, Response<BaseResponse<UserStep>> response) {
                         super.onResponse(call, response);
 
-                        if (response.body() != null &&
-                                response.body().getData() != null &&
-                                response.body().getData().getUserSteps() != null) {
-                            ArrayList<UserStep> steps = response.body().getData().getUserSteps();
-
-                            if (steps.size() == 2) {
-                                lastStepCount = steps.get(1).getStep();
-                                lastCalorieCount = steps.get(1).getCalorie();
-                            }
+                        if (response.body() != null && response.body().getData() != null) {
+                            lastStepCount = response.body().getData().getStep();
+                            lastCalorieCount = response.body().getData().getCalorie();
 
                             refreshView();
                         }
                     }
 
                     @Override
-                    public void onFailure(Call<BaseResponse<UserStepTrend>> call, Throwable t) {
+                    public void onFailure(Call<BaseResponse<UserStep>> call, Throwable t) {
                         super.onFailure(call, t);
                         // empty on failure
                     }

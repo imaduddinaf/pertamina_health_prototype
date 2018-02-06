@@ -19,6 +19,8 @@
     <string name="daily_step_title">Daily Step Count</string>
     <string name="step_unit">langkah</string>
     <string name="step_total">Total</string>
+    <string name="distance">Jarak</string>
+    <string name="speed">Kecepatan rata-rata</string>
 
     <!-- Calorie -->
     <string name="calorie">Kalori terbakar</string>

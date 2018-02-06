@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Query;
 
 /**
  * Created by Imaduddin Al Fikri on 31-Jan-18.
@@ -24,18 +26,23 @@ public interface StepsService {
         return APIManager.get().service().create(StepsService.class);
     }
 
-    @FormUrlEncoded
-    @POST("rank.php")
-    Call<BaseResponse<ArrayList<UserStep>>> getLeaderboard(@Field("date") String date);
+    @GET("rank.php")
+    Call<BaseResponse<ArrayList<UserStep>>> getLeaderboard(@Query("date") String date);
 
-    @FormUrlEncoded
-    @POST("average_today.php")
-    Call<BaseResponse<SimpleUserAverageStep>> getAvgAll(@Field("date") String date);
+    @GET("average_today.php")
+    Call<BaseResponse<SimpleUserAverageStep>> getAvgAll(@Query("date") String date);
 
-    @FormUrlEncoded
-    @POST("my_step.php")
-    Call<BaseResponse<UserStepTrend>> getTrend(@Field("id_user") long userID,
-                                               @Field("amount") Integer amount);
+    @GET("my_step.php")
+    Call<BaseResponse<ArrayList<UserStep>>> getTrend(@Query("id_user") long userID,
+                                                     @Query("amount") Integer amount);
+
+    @GET("my_step_today.php")
+    Call<BaseResponse<UserStep>> getStep(@Query("id_user") long userID,
+                                         @Query("date") String date);
+
+    @GET("step_performance.php")
+    Call<BaseResponse<UserStepTrend>> getPerformance(@Query("id_user") long userID,
+                                                     @Query("amount") Integer amount);
 
     @FormUrlEncoded
     @POST("add_step.php")
@@ -43,6 +50,7 @@ public interface StepsService {
                                           @Field("date") String date,
                                           @Field("step") Integer step,
                                           @Field("calorie") Integer calorie,
-                                          @Field("distance") Integer distance);
+                                          @Field("distance") Integer distance,
+                                          @Field("speed") Double speed);
 
 }

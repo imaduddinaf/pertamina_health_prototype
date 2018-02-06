@@ -124,8 +124,6 @@ public class UserSession {
     }
 
     public void clearPref(Context context) {
-//        prefEditor(context).remove(USERNAME_KEY);
-//        prefEditor(context).remove(PASSWORD_KEY);
         prefEditor(context).clear();
         prefEditor(context).apply();
     }
@@ -144,7 +142,8 @@ public class UserSession {
                 Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME),
                 stepCount,
                 calorieCount,
-                distance)
+                distance,
+                stepDailyTrend.getTotalSpeed())
                 .enqueue(new APICallback<BaseResponse<String>>() {
                     @Override
                     public void onResponse(Call<BaseResponse<String>> call, Response<BaseResponse<String>> response) {

@@ -1,5 +1,8 @@
 package com.imaduddinaf.pertaminahealthassistant.shealth.model;
 
+import android.util.Log;
+
+import com.imaduddinaf.pertaminahealthassistant.Constant;
 import com.imaduddinaf.pertaminahealthassistant.shealth.reader.StepCountReader;
 
 import java.util.List;
@@ -10,8 +13,6 @@ public class StepDailyTrend {
     private Double totalSpeed = 0.0;
     private Double totalDistance = 0.0;
 
-    private List<StepCountReader.StepBinningData> details = null;
-
     public StepDailyTrend() {
 
     }
@@ -19,13 +20,11 @@ public class StepDailyTrend {
     public StepDailyTrend(Integer totalStep,
                           Double totalCalorie,
                           Double totalSpeed,
-                          Double totalDistance,
-                          List<StepCountReader.StepBinningData> details) {
+                          Double totalDistance) {
         this.totalStep = totalStep;
         this.totalCalorie = totalCalorie;
         this.totalSpeed = totalSpeed;
         this.totalDistance = totalDistance;
-        this.details = details;
     }
 
     public Integer getTotalStep() {
@@ -44,7 +43,4 @@ public class StepDailyTrend {
         return totalSpeed;
     }
 
-    public List<StepCountReader.StepBinningData> getDetails() {
-        return details;
-    }
 }

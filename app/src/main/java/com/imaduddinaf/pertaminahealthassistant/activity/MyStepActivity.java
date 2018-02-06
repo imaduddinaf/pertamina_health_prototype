@@ -1,218 +1,284 @@
 package com.imaduddinaf.pertaminahealthassistant.activity;
 
-import android.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.imaduddinaf.pertaminahealthassistant.Helper;
 import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.Constant;
+import com.imaduddinaf.pertaminahealthassistant.UserSession;
+import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
+import com.imaduddinaf.pertaminahealthassistant.model.BaseResponse;
+import com.imaduddinaf.pertaminahealthassistant.model.User;
+import com.imaduddinaf.pertaminahealthassistant.model.UserStep;
+import com.imaduddinaf.pertaminahealthassistant.network.APICallback;
+import com.imaduddinaf.pertaminahealthassistant.network.service.StepsService;
+import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthManager;
+import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthPermissionManager;
+import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthTrackerManager;
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.HeartRateReader;
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.SleepReader;
 import com.imaduddinaf.pertaminahealthassistant.shealth.reader.StepCountReader;
-import com.samsung.android.sdk.healthdata.HealthConnectionErrorResult;
-import com.samsung.android.sdk.healthdata.HealthConstants;
-import com.samsung.android.sdk.healthdata.HealthDataService;
-import com.samsung.android.sdk.healthdata.HealthDataStore;
-import com.samsung.android.sdk.healthdata.HealthPermissionManager;
-import com.samsung.android.sdk.healthdata.HealthResultHolder;
+import com.imaduddinaf.pertaminahealthassistant.shealth.reader.WeightReader;
+import com.imaduddinaf.pertaminahealthassistant.shealth.type.BaseSHealthType;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+
+import retrofit2.Call;
+import retrofit2.Response;
 
 @EActivity(R.layout.activity_my_step)
-public class MyStepActivity extends AppCompatActivity {
+public class MyStepActivity extends BaseActivity {
 
+    // Step & date
     @ViewById(R.id.tv_step_count)
     TextView tvStepCount;
+
+    @ViewById(R.id.tv_calorie_count)
+    TextView tvCalorieCount;
 
     @ViewById(R.id.tv_date)
     TextView tvDate;
 
-    private long currentStartTime;
-    private HealthDataStore healthDataStore;
+    // Chart
+
+    @ViewById(R.id.container_chart_step)
+    LinearLayout containerChartStep;
+
+    // Details
+    @ViewById(R.id.tv_distance)
+    TextView tvDistance;
+
+    @ViewById(R.id.tv_calorie_count_detail)
+    TextView tvCalorieCountDetail;
+
+    @ViewById(R.id.tv_speed)
+    TextView tvSpeed;
+
+    private long currentTime;
+    private Integer stepCount = 0;
+    private Integer calorieCount = 0;
+    private Integer distance = 0;
+    private Double speed = 0.0;
+    private ArrayList<UserStep> stepHistory = new ArrayList<>();
+
+    private SHealthManager sHealthManager;
     private StepCountReader stepCountReader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        currentStartTime = Constant.TODAY_START_UTC_TIME;
+        currentTime = Constant.TODAY_START_UTC_TIME;
 
-        HealthDataService healthDataService = new HealthDataService();
-        try {
-            healthDataService.initialize(this);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        // Create a HealthDataStore instance and set its listener
-        healthDataStore = new HealthDataStore(this, connectionListener);
+        sHealthManager = new SHealthManager(
+                this,
+                this,
+                new SHealthPermissionManager(this,
+                        (BaseActivity) this,
+                        () -> {
+                            //didGotPermission
+                            requestStep();
+                        },
+                        () -> {
+                            // didNotGotPermission
+                            // empty
+                        }
+                ),
+                new BaseSHealthType()
+        );
 
-        // Request the connection to the health data store
-        healthDataStore.connectService();
-//        stepCountReader = new StepCountReader(healthDataStore, stepCountObserver);
+        stepCountReader = new StepCountReader(sHealthManager.getHealthDataStore());
+        requestData();
     }
 
-    @AfterViews
+    @Override
     public void afterViews() {
-        tvDate.setText(Helper.getFormattedTime(currentStartTime));
+        super.afterViews();
+
+        sHealthManager.connectService();
+        refreshView();
     }
 
     @Override
     public void onDestroy() {
-        healthDataStore.disconnectService();
+        sHealthManager.disconnectService();
+
         super.onDestroy();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        stepCountReader.requestDailyStepCount(currentStartTime);
+
+        if (sHealthManager.isConnected() && sHealthManager.isPermissionAcquired()) {
+            requestData();
+        } else {
+            sHealthManager.connectService();
+        }
+
+        refreshView();
     }
 
     // Button Listener
     @Click(R.id.button_date_before)
     void clickOnDateBefore() {
-        currentStartTime -= Constant.ONE_DAY;
-        tvDate.setText(Helper.getFormattedTime(currentStartTime));
-        stepCountReader.requestDailyStepCount(currentStartTime);
+        long newTime = currentTime - Constant.ONE_DAY;
+
+        // max 30 days before
+        if (newTime < Constant.TODAY_START_UTC_TIME - (30 * Constant.ONE_DAY)) return;
+
+        currentTime = newTime;
+        requestData();
+        refreshView();
     }
 
     @Click(R.id.button_date_next)
     void clickOnDateNext() {
-        currentStartTime += Constant.ONE_DAY;
-        tvDate.setText(Helper.getFormattedTime(currentStartTime));
-        stepCountReader.requestDailyStepCount(currentStartTime);
+        long newTime = currentTime + Constant.ONE_DAY;
+
+        // max today
+        if (newTime > Constant.TODAY_START_UTC_TIME) return;
+
+        currentTime = newTime;
+        requestData();
+        refreshView();
     }
 
-    // Here below are boilerplate codes that can be optimized
+    private void refreshView() {
+        if (!isAfterViewsOrInjection()) return;
 
-    // Permission Listener
-    private final HealthResultHolder.ResultListener<HealthPermissionManager.PermissionResult> mPermissionListener =
-            new HealthResultHolder.ResultListener<HealthPermissionManager.PermissionResult>() {
+        tvDate.setText(Helper.getFormattedTime(currentTime, Helper.DateFormat.COMPLETE));
 
-                @Override
-                public void onResult(HealthPermissionManager.PermissionResult result) {
-                    Map<HealthPermissionManager.PermissionKey, Boolean> resultMap = result.getResultMap();
-                    // Show a permission alarm and clear step count if permissions are not acquired
-                    if (resultMap.values().contains(Boolean.FALSE)) {
-                        updateStepCountView("");
-                        showPermissionAlarmDialog();
-                    } else {
-                        // Get the daily step count of a particular day and display it
-                        stepCountReader.requestDailyStepCount(currentStartTime);
-                    }
-                }
-            };
+        tvStepCount.setText(Helper.getStringOrEmpty(stepCount));
+        tvCalorieCount.setText(Helper.getStringOrEmpty(calorieCount));
 
-    private void showPermissionAlarmDialog() {
-        AlertDialog.Builder alert = new AlertDialog.Builder(this);
-        alert.setTitle(R.string.notice)
-                .setMessage(R.string.msg_perm_acquired)
-                .setPositiveButton(R.string.ok, null)
-                .show();
+        Double distanceInKm = Double.valueOf(distance / 1000);
+        if (distanceInKm > 0.1) {
+            tvDistance.setText(Helper.getStringOrEmpty(distanceInKm, "km"));
+        } else {
+            tvDistance.setText(Helper.getStringOrEmpty(distance, "meter"));
+        }
+
+        tvCalorieCountDetail.setText(Helper.getStringOrEmpty(calorieCount, "kalori"));
+        Double speedInKmHour = speed / (1000 * 3600);
+
+        if (speedInKmHour > 0.09)  {
+            tvSpeed.setText(Helper.getStringOrEmpty(speedInKmHour, "#.##", "km/jam"));
+        } else {
+            tvSpeed.setText(Helper.getStringOrEmpty(speed, null, "meter/detik"));
+        }
+
+        if (!stepHistory.isEmpty()) {
+            containerChartStep.setVisibility(View.VISIBLE);
+        } else {
+            containerChartStep.setVisibility(View.GONE);
+        }
     }
 
-    private void showConnectionFailureDialog(final HealthConnectionErrorResult error) {
-        AlertDialog.Builder alert = new AlertDialog.Builder(this);
-
-        if (error.hasResolution()) {
-            switch (error.getErrorCode()) {
-                case HealthConnectionErrorResult.PLATFORM_NOT_INSTALLED:
-                    alert.setMessage(R.string.msg_req_install);
-                    break;
-                case HealthConnectionErrorResult.OLD_VERSION_PLATFORM:
-                    alert.setMessage(R.string.msg_req_upgrade);
-                    break;
-                case HealthConnectionErrorResult.PLATFORM_DISABLED:
-                    alert.setMessage(R.string.msg_req_enable);
-                    break;
-                case HealthConnectionErrorResult.USER_AGREEMENT_NEEDED:
-                    alert.setMessage(R.string.msg_req_agree);
-                    break;
-                default:
-                    alert.setMessage(R.string.msg_req_available);
-                    break;
+    private void requestData() {
+        if (currentTime == Constant.TODAY_START_UTC_TIME) {
+            if (sHealthManager.isConnected() && sHealthManager.isPermissionAcquired()) {
+                requestStep();
+            } else {
+                sHealthManager.connectService();
             }
         } else {
-            alert.setMessage(R.string.msg_conn_not_available);
+            requestStepFromBE();
         }
 
-        alert.setPositiveButton(R.string.ok, (dialog, id) -> {
-            if (error.hasResolution()) {
-                error.resolve(this);
-            }
+        requestStepHistory();
+    }
+
+    private void requestStep() {
+
+        resetData();
+
+        stepCountReader.readStepCount(currentTime, stepDailyTrend -> {
+            stepCount = stepDailyTrend.getTotalStep();
+            calorieCount = stepDailyTrend.getTotalCalorie().intValue();
+            distance = stepDailyTrend.getTotalDistance().intValue();
+            speed = stepDailyTrend.getTotalSpeed();
+
+            UserSession.instance().updateSteps(stepDailyTrend);
+
+            refreshView();
         });
-
-        if (error.hasResolution()) {
-            alert.setNegativeButton(R.string.cancel, null);
-        }
-
-        alert.show();
     }
 
-    private boolean isPermissionAcquired() {
-        HealthPermissionManager pmsManager = new HealthPermissionManager(healthDataStore);
-        try {
-            // Check whether the permissions that this application needs are acquired
-            Map<HealthPermissionManager.PermissionKey, Boolean> resultMap = pmsManager.isPermissionAcquired(generatePermissionKeySet());
-            return !resultMap.values().contains(Boolean.FALSE);
-        } catch (Exception e) {
-            Log.e(Constant.ERROR_TAG, "Permission request fails.", e);
-        }
-        return false;
+    private void resetData() {
+        stepCount = 0;
+        calorieCount = 0;
+        distance = 0;
+        speed = 0.0;
     }
 
-    private void requestPermission() {
-        HealthPermissionManager pmsManager = new HealthPermissionManager(healthDataStore);
-        try {
-            // Show user permission UI for allowing user to change options
-            pmsManager.requestPermissions(generatePermissionKeySet(), this)
-                    .setResultListener(mPermissionListener);
-        } catch (Exception e) {
-            Log.e(Constant.ERROR_TAG, "Permission setting fails.", e);
-        }
+    private void requestStepFromBE() {
+        resetData();
+        
+        if (!UserSession.instance().isLoggedIn()) return;
+
+        User user = UserSession.instance().getUser();
+
+        // request yesterday step
+        StepsService.instance()
+                .getStep(user.getID(), Helper.getFormattedTime(currentTime))
+                .enqueue(new APICallback<BaseResponse<UserStep>>(this, Constant.DEFAULT_LOADING_MESSAGE) {
+                    @Override
+                    public void onResponse(Call<BaseResponse<UserStep>> call, Response<BaseResponse<UserStep>> response) {
+                        super.onResponse(call, response);
+
+                        if (response.body() != null && response.body().getData() != null) {
+                            stepCount = response.body().getData().getStep();
+                            calorieCount = response.body().getData().getCalorie();
+                            distance = response.body().getData().getDistance();
+                            speed = response.body().getData().getSpeed();
+
+                            refreshView();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<UserStep>> call, Throwable t) {
+                        super.onFailure(call, t);
+                        // empty on failure
+                    }
+                });
     }
 
-    private Set<HealthPermissionManager.PermissionKey> generatePermissionKeySet() {
-        Set<HealthPermissionManager.PermissionKey> pmsKeySet = new HashSet<>();
-        pmsKeySet.add(new HealthPermissionManager.PermissionKey(HealthConstants.StepCount.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
-        pmsKeySet.add(new HealthPermissionManager.PermissionKey(StepCountReader.STEP_SUMMARY_DATA_TYPE_NAME, HealthPermissionManager.PermissionType.READ));
-        return pmsKeySet;
+    private void requestStepHistory() {
+        if (!UserSession.instance().isLoggedIn()) return;
+
+        User user = UserSession.instance().getUser();
+
+        StepsService.instance()
+                .getTrend(user.getID(), 30)
+                .enqueue(new APICallback<BaseResponse<ArrayList<UserStep>>>(this, Constant.DEFAULT_LOADING_MESSAGE) {
+                    @Override
+                    public void onResponse(Call<BaseResponse<ArrayList<UserStep>>> call, Response<BaseResponse<ArrayList<UserStep>>> response) {
+                        super.onResponse(call, response);
+
+                        if (response.body() != null && response.body().getData() != null) {
+                            stepHistory = response.body().getData();
+
+                            refreshView();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<ArrayList<UserStep>>> call, Throwable t) {
+                        super.onFailure(call, t);
+                        // empty on failure
+                    }
+                });
     }
-
-    // Connection Listener
-    private final HealthDataStore.ConnectionListener connectionListener = new HealthDataStore.ConnectionListener() {
-        @Override
-        public void onConnected() {
-            Log.d(Constant.DEBUG_TAG, "onConnected");
-            if (isPermissionAcquired()) {
-                stepCountReader.requestDailyStepCount(currentStartTime);
-            } else {
-                requestPermission();
-            }
-        }
-
-        @Override
-        public void onConnectionFailed(HealthConnectionErrorResult error) {
-            Log.d(Constant.DEBUG_TAG, "onConnectionFailed");
-            showConnectionFailureDialog(error);
-        }
-
-        @Override
-        public void onDisconnected() {
-            Log.d(Constant.DEBUG_TAG, "onDisconnected");
-        }
-    };
-
-    private void updateStepCountView(final String count) {
-        tvStepCount.setText(count);
-    }
-
 }

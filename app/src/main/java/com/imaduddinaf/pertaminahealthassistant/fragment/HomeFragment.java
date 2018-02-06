@@ -1,5 +1,6 @@
 package com.imaduddinaf.pertaminahealthassistant.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -10,6 +11,7 @@ import com.imaduddinaf.pertaminahealthassistant.Constant;
 import com.imaduddinaf.pertaminahealthassistant.Helper;
 import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.UserSession;
+import com.imaduddinaf.pertaminahealthassistant.activity.MyStepActivity_;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
 import com.imaduddinaf.pertaminahealthassistant.model.BaseResponse;
 import com.imaduddinaf.pertaminahealthassistant.model.SimpleUserAverageStep;
@@ -74,7 +76,6 @@ public class HomeFragment extends BaseFragment {
     LinearLayout containerLeaderboard;
 
     private SHealthManager sHealthManager;
-    private SHealthTrackerManager sHealthTrackerManager = null;
     private StepCountReader stepCountReader;
 
     private String todayFact = "";
@@ -111,7 +112,6 @@ public class HomeFragment extends BaseFragment {
         );
 
         stepCountReader = new StepCountReader(sHealthManager.getHealthDataStore());
-        sHealthTrackerManager = new SHealthTrackerManager(this.getContext());
     }
 
     @Override
@@ -145,7 +145,8 @@ public class HomeFragment extends BaseFragment {
 
     @Click(R.id.container_step_count)
     void tapOnContainerStepCount(View v) {
-        sHealthTrackerManager.startActivity(this.getContext(), v, TrackerManager.TrackerId.HEART_RATE);
+        Intent myIntent = new Intent(this.getActivity(), MyStepActivity_.class);
+        this.getActivity().startActivity(myIntent);
     }
 
     private void refreshView() {
@@ -257,7 +258,7 @@ public class HomeFragment extends BaseFragment {
 
         // request today fact
         FactService.instance()
-                .getFact()
+                .getFact("")
                 .enqueue(new APICallback<BaseResponse<String>>() {
                     @Override
                     public void onResponse(Call<BaseResponse<String>> call, Response<BaseResponse<String>> response) {
@@ -281,7 +282,7 @@ public class HomeFragment extends BaseFragment {
 
             // request a-month step
             StepsService.instance()
-                    .getTrend(user.getID(), 30)
+                    .getPerformance(user.getID(), 30)
                     .enqueue(new APICallback<BaseResponse<UserStepTrend>>() {
                         @Override
                         public void onResponse(Call<BaseResponse<UserStepTrend>> call, Response<BaseResponse<UserStepTrend>> response) {
@@ -301,30 +302,21 @@ public class HomeFragment extends BaseFragment {
 
             // request yesterday step
             StepsService.instance()
-                    .getTrend(user.getID(), 2)
-                    .enqueue(new APICallback<BaseResponse<UserStepTrend>>() {
+                    .getStep(user.getID(), Helper.getFormattedTime(Constant.yesterday()))
+                    .enqueue(new APICallback<BaseResponse<UserStep>>() {
                         @Override
-                        public void onResponse(Call<BaseResponse<UserStepTrend>> call, Response<BaseResponse<UserStepTrend>> response) {
+                        public void onResponse(Call<BaseResponse<UserStep>> call, Response<BaseResponse<UserStep>> response) {
                             super.onResponse(call, response);
-                            Log.d(Constant.DEBUG_TAG, "got response yesterday");
 
-                            if (response.body() != null &&
-                                    response.body().getData() != null &&
-                                    response.body().getData().getUserSteps() != null) {
-                                ArrayList<UserStep> steps = response.body().getData().getUserSteps();
-                                Log.d(Constant.DEBUG_TAG, "got body response yesterday");
-
-                                if (steps.size() == 2) {
-                                    yesterdayStep = steps.get(1).getStep();
-                                    Log.d(Constant.DEBUG_TAG, "yesterday: " + yesterdayStep);
-                                }
+                            if (response.body() != null && response.body().getData() != null) {
+                                yesterdayStep = response.body().getData().getStep();
 
                                 refreshView();
                             }
                         }
 
                         @Override
-                        public void onFailure(Call<BaseResponse<UserStepTrend>> call, Throwable t) {
+                        public void onFailure(Call<BaseResponse<UserStep>> call, Throwable t) {
                             super.onFailure(call, t);
                             // empty on failure
                         }

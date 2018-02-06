@@ -48,8 +48,12 @@ public class LoginActivity extends BaseActivity {
 
     @Click(R.id.button_login)
     void login() {
-        String username = "fahmikurniawan";//edUsername.getText().toString();
-        String password = "fahmi";//edPassword.getText().toString();
+        String username = edUsername.getText().toString();
+        String password = edPassword.getText().toString();
+
+        username = "fahmikurniawan";
+        password = "fahmi";
+
         password = Helper.md5(password);
 
         Log.d(Constant.DEBUG_TAG, username + " - " + password);
@@ -58,11 +62,12 @@ public class LoginActivity extends BaseActivity {
         Call<BaseResponse<User>> call = authService.auth(username, password);
 
         String finalPassword = password;
+        String finalUsername = username;
         call.enqueue(new APICallback<BaseResponse<User>>(this, Constant.DEFAULT_LOADING_MESSAGE) {
             @Override
             public void onResponse(Call<BaseResponse<User>> call, Response<BaseResponse<User>> response) {
                 super.onResponse(call, response);
-                onSuccessLogin(response.body(), username, finalPassword);
+                onSuccessLogin(response.body(), finalUsername, finalPassword);
             }
 
             @Override

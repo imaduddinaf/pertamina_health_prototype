@@ -5,6 +5,7 @@ import com.imaduddinaf.pertaminahealthassistant.network.APIManager;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.Query;
 
 /**
  * Created by Imaduddin Al Fikri on 05-Feb-18.
@@ -17,5 +18,5 @@ public interface FactService {
     }
 
     @GET("get_message.php")
-    Call<BaseResponse<String>> getFact();
+    Call<BaseResponse<String>> getFact(@Query("date") String date);
 }

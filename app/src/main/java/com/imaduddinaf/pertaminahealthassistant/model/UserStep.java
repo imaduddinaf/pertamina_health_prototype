@@ -13,6 +13,9 @@ public class UserStep extends SimpleUserStep implements Serializable {
     @SerializedName("calorie")
     Integer calorie;
 
+    @SerializedName("speed")
+    Double speed;
+
     @SerializedName("user")
     User user;
 
@@ -33,5 +36,9 @@ public class UserStep extends SimpleUserStep implements Serializable {
 
     public String getLastUpdatedString() {
         return lastUpdatedString;
+    }
+
+    public Double getSpeed() {
+        return speed;
     }
 }

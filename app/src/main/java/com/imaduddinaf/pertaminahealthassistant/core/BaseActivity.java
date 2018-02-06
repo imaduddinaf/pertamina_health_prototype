@@ -15,6 +15,16 @@ import org.androidannotations.annotations.EActivity;
 @EActivity(R.layout.activity_blank)
 public class BaseActivity extends AppCompatActivity {
 
+    private boolean isAfterViewsOrInjection = false;
+
+    public boolean isAfterViewsOrInjection() {
+        return isAfterViewsOrInjection;
+    }
+
+    public void setAfterViewsOrInjection(boolean afterViewsOrInjection) {
+        isAfterViewsOrInjection = afterViewsOrInjection;
+    }
+
     @AfterViews
     public void afterViews() {
         setTitle(getCustomTitle());
@@ -23,6 +33,29 @@ public class BaseActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setHomeButtonEnabled(true);
         }
+
+        isAfterViewsOrInjection = true;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        isAfterViewsOrInjection = false;
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        isAfterViewsOrInjection = false;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        isAfterViewsOrInjection = false;
     }
 
     @Override
