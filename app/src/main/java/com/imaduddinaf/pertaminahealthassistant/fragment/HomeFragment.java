@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.imaduddinaf.pertaminahealthassistant.Constant;
@@ -15,29 +16,22 @@ import com.imaduddinaf.pertaminahealthassistant.activity.MyStepActivity_;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
 import com.imaduddinaf.pertaminahealthassistant.model.BaseResponse;
 import com.imaduddinaf.pertaminahealthassistant.model.SimpleUserAverageStep;
-import com.imaduddinaf.pertaminahealthassistant.model.SimpleUserStep;
 import com.imaduddinaf.pertaminahealthassistant.model.User;
 import com.imaduddinaf.pertaminahealthassistant.model.UserStep;
 import com.imaduddinaf.pertaminahealthassistant.model.UserStepTrend;
 import com.imaduddinaf.pertaminahealthassistant.network.APICallback;
-import com.imaduddinaf.pertaminahealthassistant.network.APIManager;
-import com.imaduddinaf.pertaminahealthassistant.network.service.AuthService;
 import com.imaduddinaf.pertaminahealthassistant.network.service.FactService;
 import com.imaduddinaf.pertaminahealthassistant.network.service.StepsService;
 import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthManager;
 import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthPermissionManager;
-import com.imaduddinaf.pertaminahealthassistant.shealth.SHealthTrackerManager;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseFragment;
 import com.imaduddinaf.pertaminahealthassistant.shealth.reader.StepCountReader;
 import com.imaduddinaf.pertaminahealthassistant.shealth.type.BaseSHealthType;
-import com.samsung.android.sdk.shealth.tracker.TrackerManager;
 
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
 
-import java.sql.Date;
-import java.time.LocalDate;
 import java.util.ArrayList;
 
 import retrofit2.Call;
@@ -71,20 +65,13 @@ public class HomeFragment extends BaseFragment {
     @ViewById(R.id.tv_today_fact)
     TextView tvTodayFact;
 
-    // Leaderboard
-    @ViewById(R.id.container_leaderboard)
-    LinearLayout containerLeaderboard;
-
     private SHealthManager sHealthManager;
     private StepCountReader stepCountReader;
 
     private String todayFact = "";
     private Integer todayAllAvgStep = 0;
     private Integer todayStep = 0;
-    private Integer yesterdayStep = 0;
     private UserStepTrend stepTrendAll;
-    private ArrayList<UserStep> topSteps = new ArrayList<>();
-    private ArrayList<UserStep> yesterdayTopSteps = new ArrayList<>();
 
     public HomeFragment() {
         // Required empty public constructor
@@ -174,13 +161,6 @@ public class HomeFragment extends BaseFragment {
         } else {
             containerTodayFact.setVisibility(View.GONE);
         }
-
-        // leaderboard/top steps
-        if (!topSteps.isEmpty() && !yesterdayTopSteps.isEmpty()) {
-            containerLeaderboard.setVisibility(View.VISIBLE);
-        } else {
-            containerLeaderboard.setVisibility(View.GONE);
-        }
     }
 
     private void requestTodayStep() {
@@ -196,7 +176,7 @@ public class HomeFragment extends BaseFragment {
         // request average of all
         Log.d(Constant.DEBUG_TAG, "today: " + Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME));
         StepsService.instance()
-                .getAvgAll(Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME))
+                .getAvgAll(Helper.getFormattedTime(Constant.today()))
                 .enqueue(new APICallback<BaseResponse<SimpleUserAverageStep>>() {
                     @Override
                     public void onResponse(Call<BaseResponse<SimpleUserAverageStep>> call, Response<BaseResponse<SimpleUserAverageStep>> response) {
@@ -211,46 +191,6 @@ public class HomeFragment extends BaseFragment {
 
                     @Override
                     public void onFailure(Call<BaseResponse<SimpleUserAverageStep>> call, Throwable t) {
-                        super.onFailure(call, t);
-                        // empty on failure
-                    }
-                });
-
-        // request today's leaderboard
-        StepsService.instance()
-                .getLeaderboard(Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME))
-                .enqueue(new APICallback<BaseResponse<ArrayList<UserStep>>>() {
-                    @Override
-                    public void onResponse(Call<BaseResponse<ArrayList<UserStep>>> call, Response<BaseResponse<ArrayList<UserStep>>> response) {
-                        super.onResponse(call, response);
-                        if (response.body() != null && response.body().getData() != null) {
-                            topSteps = response.body().getData();
-                            refreshView();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<BaseResponse<ArrayList<UserStep>>> call, Throwable t) {
-                        super.onFailure(call, t);
-                        // empty on failure
-                    }
-                });
-
-        // request yesterdays's leaderboard
-        StepsService.instance()
-                .getLeaderboard(Helper.getFormattedTime(Constant.TODAY_START_UTC_TIME - Constant.ONE_DAY))
-                .enqueue(new APICallback<BaseResponse<ArrayList<UserStep>>>() {
-                    @Override
-                    public void onResponse(Call<BaseResponse<ArrayList<UserStep>>> call, Response<BaseResponse<ArrayList<UserStep>>> response) {
-                        super.onResponse(call, response);
-                        if (response.body() != null && response.body().getData() != null) {
-                            yesterdayTopSteps = response.body().getData();
-                            refreshView();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<BaseResponse<ArrayList<UserStep>>> call, Throwable t) {
                         super.onFailure(call, t);
                         // empty on failure
                     }
@@ -295,28 +235,6 @@ public class HomeFragment extends BaseFragment {
 
                         @Override
                         public void onFailure(Call<BaseResponse<UserStepTrend>> call, Throwable t) {
-                            super.onFailure(call, t);
-                            // empty on failure
-                        }
-                    });
-
-            // request yesterday step
-            StepsService.instance()
-                    .getStep(user.getID(), Helper.getFormattedTime(Constant.yesterday()))
-                    .enqueue(new APICallback<BaseResponse<UserStep>>() {
-                        @Override
-                        public void onResponse(Call<BaseResponse<UserStep>> call, Response<BaseResponse<UserStep>> response) {
-                            super.onResponse(call, response);
-
-                            if (response.body() != null && response.body().getData() != null) {
-                                yesterdayStep = response.body().getData().getStep();
-
-                                refreshView();
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<BaseResponse<UserStep>> call, Throwable t) {
                             super.onFailure(call, t);
                             // empty on failure
                         }

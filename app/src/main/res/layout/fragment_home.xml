@@ -131,17 +131,6 @@
 
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/container_leaderboard"
-            android:layout_below="@+id/container_today_fact"
-            android:layout_marginTop="8dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/white"
-            android:orientation="vertical">
-
-        </LinearLayout>
-
     </RelativeLayout>
 
 </ScrollView>

@@ -26,8 +26,6 @@ import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 
-import okhttp3.OkHttpClient;
-
 @EActivity(R.layout.activity_main)
 public class MainActivity extends BaseActivity {
 

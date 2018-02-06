@@ -23,6 +23,7 @@ import static com.imaduddinaf.pertaminahealthassistant.Helper.DateFormat.SIMPLE_
 public class Helper {
 
     public static final String UNDERCONSTRUCTION_TEXT = "Fitur sedang dalam tahap pengembangan";
+    public static final String NEED_LOGIN_TEXT = "Silahkan login terlebih dahulu";
 
     public static class DateFormat {
         public static String SIMPLE_REVERSED_WITH_DASH = "yyyy-MM-dd";
@@ -59,6 +60,10 @@ public class Helper {
 
     public static void showUnderConstructionToast(BaseActivity activity) {
         showMessage(activity, UNDERCONSTRUCTION_TEXT);
+    }
+
+    public static void showNeedLoginToast(BaseActivity activity) {
+        showMessage(activity, NEED_LOGIN_TEXT);
     }
 
     public static void showMessage(BaseActivity activity, String message) {

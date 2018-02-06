@@ -5,6 +5,8 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title">Title</string>
+    <string name="subtitle">Subtitle</string>
 
     <string name="loading">-</string>
     <string name="avg_today">Rata-rata hari ini</string>
@@ -14,6 +16,7 @@
     <string name="today">Hari ini</string>
     <string name="yesterday">Kemarin</string>
     <string name="average">Rata-rata</string>
+    <string name="leaderboard">Langkah tertinggi</string>
 
     <!-- Step -->
     <string name="daily_step_title">Daily Step Count</string>

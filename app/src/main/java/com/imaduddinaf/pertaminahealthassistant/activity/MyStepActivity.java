@@ -132,6 +132,12 @@ public class MyStepActivity extends BaseActivity {
     // Button Listener
     @Click(R.id.button_date_before)
     void clickOnDateBefore() {
+
+        if (!UserSession.instance().isLoggedIn()) {
+            Helper.showNeedLoginToast(this);
+            return;
+        }
+
         long newTime = currentTime - Constant.ONE_DAY;
 
         // max 30 days before
@@ -224,7 +230,7 @@ public class MyStepActivity extends BaseActivity {
 
     private void requestStepFromBE() {
         resetData();
-        
+
         if (!UserSession.instance().isLoggedIn()) return;
 
         User user = UserSession.instance().getUser();

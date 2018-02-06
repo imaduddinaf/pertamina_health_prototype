@@ -1,13 +1,13 @@
 package com.imaduddinaf.pertaminahealthassistant.core;
 
+import android.database.DataSetObserver;
 import android.support.v4.app.Fragment;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Adapter;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.EFragment;
-
-/**
- * Created by Imaduddin Al Fikri on 31-Jan-18.
- */
 
 @EFragment
 public class BaseFragment extends Fragment {
