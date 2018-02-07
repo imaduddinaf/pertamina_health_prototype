@@ -51,8 +51,8 @@ public class LoginActivity extends BaseActivity {
         String username = edUsername.getText().toString();
         String password = edPassword.getText().toString();
 
-        username = "fahmikurniawan";
-        password = "fahmi";
+//        username = "fahmikurniawan";
+//        password = "fahmi";
 
         password = Helper.md5(password);
 
