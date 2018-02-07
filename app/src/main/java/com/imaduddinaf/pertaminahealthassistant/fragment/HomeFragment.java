@@ -8,6 +8,10 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.imaduddinaf.pertaminahealthassistant.Constant;
 import com.imaduddinaf.pertaminahealthassistant.Helper;
 import com.imaduddinaf.pertaminahealthassistant.R;
@@ -42,7 +46,7 @@ import retrofit2.Response;
  */
 
 @EFragment(R.layout.fragment_home)
-public class HomeFragment extends BaseFragment {
+public class HomeFragment extends BaseFragment implements OnChartValueSelectedListener {
 
     // Step count
     @ViewById(R.id.container_step_count)
@@ -57,6 +61,9 @@ public class HomeFragment extends BaseFragment {
     // Chart
     @ViewById(R.id.container_chart_step)
     LinearLayout containerChartStep;
+
+    @ViewById(R.id.chart_performance)
+    BarChart chartPerformance;
 
     // Today fact
     @ViewById(R.id.container_today_fact)
@@ -106,6 +113,7 @@ public class HomeFragment extends BaseFragment {
         super.afterViews();
 
         sHealthManager.connectService();
+        initChart();
         refreshView();
     }
 
@@ -136,6 +144,14 @@ public class HomeFragment extends BaseFragment {
         this.getActivity().startActivity(myIntent);
     }
 
+    private void initChart() {
+        chartPerformance.setOnChartValueSelectedListener(this);
+        chartPerformance.getDescription().setEnabled(false);
+        chartPerformance.setPinchZoom(false);
+        chartPerformance.setDrawBarShadow(false);
+        chartPerformance.setDrawGridBackground(false);
+    }
+
     private void refreshView() {
         if (!isAfterViewsOrInjection()) return;
 
@@ -144,15 +160,17 @@ public class HomeFragment extends BaseFragment {
         tvCurrentStepCount.setText(Helper.getStringOrEmpty(todayStep));
 
         // chart
-        if (stepTrendAll != null &&
-                stepTrendAll.getUserSteps() != null &&
-                !stepTrendAll.getUserSteps().isEmpty() &&
-                stepTrendAll.getAverageSteps() != null &&
-                !stepTrendAll.getAverageSteps().isEmpty()) {
-            containerChartStep.setVisibility(View.VISIBLE);
-        } else {
-            containerChartStep.setVisibility(View.GONE);
-        }
+        // hidden for now
+        containerChartStep.setVisibility(View.GONE);
+//        if (stepTrendAll != null &&
+//                stepTrendAll.getUserSteps() != null &&
+//                !stepTrendAll.getUserSteps().isEmpty() &&
+//                stepTrendAll.getAverageSteps() != null &&
+//                !stepTrendAll.getAverageSteps().isEmpty()) {
+//            containerChartStep.setVisibility(View.VISIBLE);
+//        } else {
+//            containerChartStep.setVisibility(View.GONE);
+//        }
 
         // today fact
         if (!todayFact.isEmpty()) {
@@ -220,7 +238,7 @@ public class HomeFragment extends BaseFragment {
             Log.d(Constant.DEBUG_TAG, "do request on user's");
             User user = UserSession.instance().getUser();
 
-            // request a-month step
+            // request a-month step performance
             StepsService.instance()
                     .getPerformance(user.getID(), 30)
                     .enqueue(new APICallback<BaseResponse<UserStepTrend>>() {
@@ -240,5 +258,16 @@ public class HomeFragment extends BaseFragment {
                         }
                     });
         }
+    }
+
+    // Bar chart listener
+    @Override
+    public void onValueSelected(Entry e, Highlight h) {
+
+    }
+
+    @Override
+    public void onNothingSelected() {
+
     }
 }
