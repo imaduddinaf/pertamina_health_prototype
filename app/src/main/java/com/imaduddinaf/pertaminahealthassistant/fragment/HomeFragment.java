@@ -1,6 +1,7 @@
 package com.imaduddinaf.pertaminahealthassistant.fragment;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -9,7 +10,16 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.formatter.LargeValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.imaduddinaf.pertaminahealthassistant.Constant;
@@ -37,6 +47,8 @@ import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.ViewById;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 import retrofit2.Call;
 import retrofit2.Response;
@@ -79,6 +91,8 @@ public class HomeFragment extends BaseFragment implements OnChartValueSelectedLi
     private Integer todayAllAvgStep = 0;
     private Integer todayStep = 0;
     private UserStepTrend stepTrendAll;
+    private ArrayList<UserStep> tmpStepTrend = new ArrayList<>();
+    private ArrayList<SimpleUserAverageStep> tmpAverageTrend = new ArrayList<>();
 
     public HomeFragment() {
         // Required empty public constructor
@@ -150,27 +164,128 @@ public class HomeFragment extends BaseFragment implements OnChartValueSelectedLi
         chartPerformance.setPinchZoom(false);
         chartPerformance.setDrawBarShadow(false);
         chartPerformance.setDrawGridBackground(false);
+
+        Legend legend = chartPerformance.getLegend();
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT);
+        legend.setOrientation(Legend.LegendOrientation.VERTICAL);
+        legend.setDrawInside(true);
+        legend.setYOffset(0f);
+        legend.setXOffset(5f);
+        legend.setYEntrySpace(0f);
+        legend.setTextSize(8f);
+
+        XAxis xAxis = chartPerformance.getXAxis();
+        xAxis.setGranularity(1f);
+        xAxis.setCenterAxisLabels(true);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setValueFormatter(new IAxisValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                return "";
+            }
+        });
+
+        YAxis leftAxis = chartPerformance.getAxisLeft();
+        leftAxis.setValueFormatter(new LargeValueFormatter());
+        leftAxis.setDrawGridLines(false);
+        leftAxis.setSpaceTop(35f);
+        leftAxis.setAxisMinimum(0f);
+        leftAxis.setValueFormatter(new IAxisValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                return "";
+            }
+        });
+
+        chartPerformance.getAxisRight().setEnabled(false);
+    }
+
+    private void setChartData() {
+        if (!UserSession.instance().isLoggedIn()) return;
+
+        BarDataSet averageSet, userSet;
+        ArrayList<BarEntry> yValsAverageSet = new ArrayList<>();
+        ArrayList<BarEntry> yValsUserSet = new ArrayList<>();
+
+        int groupCount = 14;
+        int startX = 0;
+        int endX = startX + groupCount;
+
+        float groupSpace = 0.08f;
+        float barSpace = 0.01f;
+        float barWidth = 0.1f;
+
+        Log.d(Constant.DEBUG_TAG, "average count: " + tmpAverageTrend.size() + " - " + tmpStepTrend.size());
+
+        int i = 0;
+        for (SimpleUserAverageStep averageStep : tmpAverageTrend) {
+            float date = (float) i;
+            yValsAverageSet.add(new BarEntry(date, averageStep.getAverage().floatValue()));
+            i++;
+        }
+
+        i = 0;
+        for (UserStep userStep : tmpStepTrend) {
+            float date = (float) i;
+            yValsUserSet.add(new BarEntry(date, userStep.getStep().floatValue()));
+            i++;
+        }
+
+        if (chartPerformance.getData() != null && chartPerformance.getData().getDataSetCount() > 0) {
+
+            averageSet = (BarDataSet) chartPerformance.getData().getDataSetByIndex(0);
+            userSet = (BarDataSet) chartPerformance.getData().getDataSetByIndex(1);
+            averageSet.setValues(yValsAverageSet);
+            userSet.setValues(yValsUserSet);
+            chartPerformance.getData().notifyDataChanged();
+            chartPerformance.notifyDataSetChanged();
+
+        } else {
+            averageSet = new BarDataSet(yValsAverageSet, "Rata-rata");
+            averageSet.setColor(Color.rgb(104, 241, 175));
+            userSet = new BarDataSet(yValsUserSet, UserSession.instance().getUser().getName());
+            userSet.setColor(Color.rgb(255, 102, 0));
+
+            BarData data = new BarData(averageSet, userSet);
+            data.setValueFormatter(new LargeValueFormatter());
+
+            chartPerformance.setData(data);
+        }
+
+        chartPerformance.getBarData().setBarWidth(barWidth);
+        chartPerformance.getXAxis().setAxisMinimum(startX);
+
+        chartPerformance.getXAxis()
+                .setAxisMaximum(startX + chartPerformance.getBarData().getGroupWidth(groupSpace, barSpace) * groupCount);
+        chartPerformance.groupBars(startX, groupSpace, barSpace);
+        chartPerformance.invalidate();
     }
 
     private void refreshView() {
-        if (!isAfterViewsOrInjection()) return;
+        if (!isAfterViewsOrInjection()) {
+            addIntoQueue(this::refreshView);
+            Log.d(Constant.DEBUG_TAG, "add into queue");
+            return;
+        }
 
         // current steps
         tvAvgStepCount.setText(Helper.getStringOrEmpty(todayAllAvgStep));
         tvCurrentStepCount.setText(Helper.getStringOrEmpty(todayStep));
 
         // chart
-        // hidden for now
         containerChartStep.setVisibility(View.GONE);
-//        if (stepTrendAll != null &&
-//                stepTrendAll.getUserSteps() != null &&
-//                !stepTrendAll.getUserSteps().isEmpty() &&
-//                stepTrendAll.getAverageSteps() != null &&
-//                !stepTrendAll.getAverageSteps().isEmpty()) {
-//            containerChartStep.setVisibility(View.VISIBLE);
-//        } else {
-//            containerChartStep.setVisibility(View.GONE);
-//        }
+        if (stepTrendAll != null &&
+                stepTrendAll.getUserSteps() != null &&
+                !stepTrendAll.getUserSteps().isEmpty() &&
+                stepTrendAll.getAverageSteps() != null &&
+                !stepTrendAll.getAverageSteps().isEmpty() &&
+                UserSession.instance().isLoggedIn()) {
+            containerChartStep.setVisibility(View.VISIBLE);
+            setChartData();
+        } else {
+            containerChartStep.setVisibility(View.GONE);
+        }
 
         // today fact
         if (!todayFact.isEmpty()) {
@@ -240,13 +355,20 @@ public class HomeFragment extends BaseFragment implements OnChartValueSelectedLi
 
             // request a-month step performance
             StepsService.instance()
-                    .getPerformance(user.getID(), 30)
+                    .getPerformance(user.getID(), 14)
                     .enqueue(new APICallback<BaseResponse<UserStepTrend>>() {
                         @Override
                         public void onResponse(Call<BaseResponse<UserStepTrend>> call, Response<BaseResponse<UserStepTrend>> response) {
                             super.onResponse(call, response);
                             if (response.body() != null && response.body().getData() != null) {
                                 stepTrendAll = response.body().getData();
+
+                                tmpStepTrend = stepTrendAll.getUserSteps();
+                                tmpAverageTrend = stepTrendAll.getAverageSteps();
+
+                                Collections.reverse(tmpStepTrend);
+                                Collections.reverse(tmpAverageTrend);
+
                                 refreshView();
                             }
                         }

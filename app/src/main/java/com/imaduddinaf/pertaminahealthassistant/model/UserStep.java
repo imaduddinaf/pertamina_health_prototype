@@ -22,6 +22,10 @@ public class UserStep extends SimpleUserStep implements Serializable {
     @SerializedName("last_updated")
     String lastUpdatedString;
 
+    public UserStep(Integer step) {
+        super(step);
+    }
+
     public Integer getDistance() {
         return distance;
     }

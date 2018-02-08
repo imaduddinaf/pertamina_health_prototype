@@ -51,8 +51,13 @@ public class LoginActivity extends BaseActivity {
         String username = edUsername.getText().toString();
         String password = edPassword.getText().toString();
 
-//        username = "fahmikurniawan";
-//        password = "fahmi";
+        if (username.isEmpty() || password.isEmpty()) {
+            Helper.showMessage(this, "Harap mengisi username dan password");
+            return;
+        }
+
+//        username = "fikri";
+//        password = "fikri";
 
         password = Helper.md5(password);
 

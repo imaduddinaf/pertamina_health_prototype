@@ -2,17 +2,23 @@ package com.imaduddinaf.pertaminahealthassistant.core;
 
 import android.database.DataSetObserver;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Adapter;
 
+import com.imaduddinaf.pertaminahealthassistant.Constant;
+
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.EFragment;
+
+import java.util.ArrayList;
 
 @EFragment
 public class BaseFragment extends Fragment {
 
     private boolean isAfterViewsOrInjection = false;
+    private ArrayList<Runnable> queue = new ArrayList<>();
 
     public boolean isAfterViewsOrInjection() {
         return isAfterViewsOrInjection;
@@ -27,20 +33,13 @@ public class BaseFragment extends Fragment {
         isAfterViewsOrInjection = true;
 
         getActivityHolder().setTitle(getCustomTitle());
-    }
 
-    @Override
-    public void onPause() {
-        super.onPause();
+        for (Runnable runnable: queue) {
+            Log.d(Constant.DEBUG_TAG, "run queue");
+            runnable.run();
+        }
 
-        isAfterViewsOrInjection = false;
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        isAfterViewsOrInjection = false;
+        queue.clear();
     }
 
     @Override
@@ -65,4 +64,7 @@ public class BaseFragment extends Fragment {
         return getActivityHolder().getCustomTitle();
     }
 
+    protected void addIntoQueue(Runnable runnable) {
+        queue.add(runnable);
+    }
 }

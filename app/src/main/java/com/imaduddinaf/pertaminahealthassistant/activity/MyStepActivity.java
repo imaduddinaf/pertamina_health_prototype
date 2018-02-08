@@ -1,5 +1,6 @@
 package com.imaduddinaf.pertaminahealthassistant.activity;
 
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -7,12 +8,26 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.formatter.LargeValueFormatter;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.imaduddinaf.pertaminahealthassistant.Helper;
 import com.imaduddinaf.pertaminahealthassistant.R;
 import com.imaduddinaf.pertaminahealthassistant.Constant;
 import com.imaduddinaf.pertaminahealthassistant.UserSession;
 import com.imaduddinaf.pertaminahealthassistant.core.BaseActivity;
 import com.imaduddinaf.pertaminahealthassistant.model.BaseResponse;
+import com.imaduddinaf.pertaminahealthassistant.model.SimpleUserAverageStep;
 import com.imaduddinaf.pertaminahealthassistant.model.User;
 import com.imaduddinaf.pertaminahealthassistant.model.UserStep;
 import com.imaduddinaf.pertaminahealthassistant.network.APICallback;
@@ -32,12 +47,13 @@ import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import retrofit2.Call;
 import retrofit2.Response;
 
 @EActivity(R.layout.activity_my_step)
-public class MyStepActivity extends BaseActivity {
+public class MyStepActivity extends BaseActivity implements OnChartValueSelectedListener {
 
     // Step & date
     @ViewById(R.id.tv_step_count)
@@ -50,9 +66,11 @@ public class MyStepActivity extends BaseActivity {
     TextView tvDate;
 
     // Chart
-
     @ViewById(R.id.container_chart_step)
     LinearLayout containerChartStep;
+
+    @ViewById(R.id.chart_performance)
+    BarChart chartPerformance;
 
     // Details
     @ViewById(R.id.tv_distance)
@@ -106,6 +124,7 @@ public class MyStepActivity extends BaseActivity {
         super.afterViews();
 
         sHealthManager.connectService();
+        initChart();
         refreshView();
     }
 
@@ -160,6 +179,76 @@ public class MyStepActivity extends BaseActivity {
         refreshView();
     }
 
+    private void initChart() {
+        chartPerformance.setOnChartValueSelectedListener(this);
+        chartPerformance.getDescription().setEnabled(false);
+        chartPerformance.setPinchZoom(false);
+        chartPerformance.setDrawBarShadow(false);
+        chartPerformance.setDrawGridBackground(false);
+
+        Legend legend = chartPerformance.getLegend();
+        legend.setEnabled(false);
+
+        XAxis xAxis = chartPerformance.getXAxis();
+        xAxis.setGranularity(1f);
+        xAxis.setCenterAxisLabels(true);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setValueFormatter(new IAxisValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                return "";
+            }
+        });
+
+        YAxis leftAxis = chartPerformance.getAxisLeft();
+        leftAxis.setValueFormatter(new LargeValueFormatter());
+        leftAxis.setDrawGridLines(false);
+        leftAxis.setSpaceTop(35f);
+        leftAxis.setAxisMinimum(0f);
+        leftAxis.setValueFormatter(new IAxisValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                return "";
+            }
+        });
+
+        chartPerformance.getAxisRight().setEnabled(false);
+    }
+
+    private void setChartData() {
+        if (!UserSession.instance().isLoggedIn()) return;
+
+        BarDataSet stepSet;
+        ArrayList<BarEntry> yValsStepSet = new ArrayList<>();
+
+        int i = 0;
+        for (UserStep stepHistory: stepHistory) {
+            float date = (float) i;
+            yValsStepSet.add(new BarEntry(date, stepHistory.getStep().floatValue()));
+            i++;
+        }
+
+        if (chartPerformance.getData() != null && chartPerformance.getData().getDataSetCount() > 0) {
+
+            stepSet = (BarDataSet) chartPerformance.getData().getDataSetByIndex(0);
+            stepSet.setValues(yValsStepSet);
+            chartPerformance.getData().notifyDataChanged();
+            chartPerformance.notifyDataSetChanged();
+
+        } else {
+            stepSet = new BarDataSet(yValsStepSet, UserSession.instance().getUser().getName());
+            stepSet.setColor(Color.rgb(104, 241, 175));
+
+            BarData data = new BarData(stepSet);
+            data.setValueFormatter(new LargeValueFormatter());
+
+            chartPerformance.setData(data);
+            chartPerformance.setFitBars(true);
+        }
+
+        chartPerformance.invalidate();
+    }
+
     private void refreshView() {
         if (!isAfterViewsOrInjection()) return;
 
@@ -186,6 +275,7 @@ public class MyStepActivity extends BaseActivity {
 
         if (!stepHistory.isEmpty()) {
             containerChartStep.setVisibility(View.VISIBLE);
+            setChartData();
         } else {
             containerChartStep.setVisibility(View.GONE);
         }
@@ -267,7 +357,7 @@ public class MyStepActivity extends BaseActivity {
         User user = UserSession.instance().getUser();
 
         StepsService.instance()
-                .getTrend(user.getID(), 30)
+                .getTrend(user.getID(), 28)
                 .enqueue(new APICallback<BaseResponse<ArrayList<UserStep>>>(this, Constant.DEFAULT_LOADING_MESSAGE) {
                     @Override
                     public void onResponse(Call<BaseResponse<ArrayList<UserStep>>> call, Response<BaseResponse<ArrayList<UserStep>>> response) {
@@ -275,6 +365,7 @@ public class MyStepActivity extends BaseActivity {
 
                         if (response.body() != null && response.body().getData() != null) {
                             stepHistory = response.body().getData();
+                            Collections.reverse(stepHistory);
 
                             refreshView();
                         }
@@ -286,5 +377,15 @@ public class MyStepActivity extends BaseActivity {
                         // empty on failure
                     }
                 });
+    }
+
+    @Override
+    public void onValueSelected(Entry e, Highlight h) {
+
+    }
+
+    @Override
+    public void onNothingSelected() {
+
     }
 }

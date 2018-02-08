@@ -127,6 +127,11 @@
             android:orientation="vertical"
             android:background="@color/white">
 
+            <com.github.mikephil.charting.charts.BarChart
+                android:id="@+id/chart_performance"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_margin="8dp"/>
         </LinearLayout>
 
         <TextView

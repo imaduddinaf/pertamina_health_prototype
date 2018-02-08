@@ -220,7 +220,10 @@ public class ProfileFragment extends BaseFragment {
     }
 
     private void refreshView() {
-        if (!isAfterViewsOrInjection()) return;
+        if (!isAfterViewsOrInjection()) {
+            addIntoQueue(this::refreshView);
+            return;
+        }
 
         tvStepCount.setText(Helper.getStringOrEmpty(stepCount));
         tvCalorieCount.setText(Helper.getStringOrEmpty(calorieCount));
