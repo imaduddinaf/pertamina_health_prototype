@@ -259,7 +259,7 @@ public class MyStepActivity extends BaseActivity implements OnChartValueSelected
 
         Double distanceInKm = Double.valueOf(distance / 1000);
         if (distanceInKm > 0.1) {
-            tvDistance.setText(Helper.getStringOrEmpty(distanceInKm, "km"));
+            tvDistance.setText(Helper.getStringOrEmpty(distanceInKm, "#.#", "km"));
         } else {
             tvDistance.setText(Helper.getStringOrEmpty(distance, "meter"));
         }

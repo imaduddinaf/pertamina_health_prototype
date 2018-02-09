@@ -261,16 +261,19 @@ public class ProfileFragment extends BaseFragment {
                         if (response.body() != null && response.body().getData() != null) {
                             lastStepCount = response.body().getData().getStep();
                             lastCalorieCount = response.body().getData().getCalorie();
-                            Log.d(Constant.DEBUG_TAG, "last " + lastStepCount + " - " + lastCalorieCount);
 
                             refreshView();
                         }
+
+                        Log.d(Constant.DEBUG_TAG, "last " + lastStepCount + " - " + lastCalorieCount);
                     }
 
                     @Override
                     public void onFailure(Call<BaseResponse<UserStep>> call, Throwable t) {
                         super.onFailure(call, t);
                         // empty on failure
+
+                        Log.d(Constant.DEBUG_TAG, "last step failure: " + t.getLocalizedMessage());
                     }
                 });
     }
