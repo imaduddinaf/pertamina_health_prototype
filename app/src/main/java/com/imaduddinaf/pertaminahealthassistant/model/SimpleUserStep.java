@@ -12,10 +12,6 @@ public class SimpleUserStep extends BaseModel implements Serializable {
     @SerializedName("date")
     String dateString;
 
-    public SimpleUserStep(Integer step) {
-        this.step = step;
-    }
-
     public Integer getStep() {
         return step;
     }

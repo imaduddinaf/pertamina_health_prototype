@@ -261,6 +261,7 @@ public class ProfileFragment extends BaseFragment {
                         if (response.body() != null && response.body().getData() != null) {
                             lastStepCount = response.body().getData().getStep();
                             lastCalorieCount = response.body().getData().getCalorie();
+                            Log.d(Constant.DEBUG_TAG, "last " + lastStepCount + " - " + lastCalorieCount);
 
                             refreshView();
                         }

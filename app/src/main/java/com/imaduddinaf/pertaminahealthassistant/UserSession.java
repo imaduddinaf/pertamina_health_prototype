@@ -135,6 +135,8 @@ public class UserSession {
         Integer calorieCount = stepDailyTrend.getTotalCalorie().intValue();
         Integer distance = stepDailyTrend.getTotalDistance().intValue();
 
+        if (stepCount <= 0 || calorieCount <= 0 || distance <= 0) return;
+
         Log.d(Constant.DEBUG_TAG, "distance: " + stepDailyTrend.getTotalDistance());
 
         StepsService.instance().updateStep(

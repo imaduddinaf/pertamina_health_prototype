@@ -52,7 +52,7 @@ public class LoginActivity extends BaseActivity {
         String password = edPassword.getText().toString();
 
         if (username.isEmpty() || password.isEmpty()) {
-            Helper.showMessage(this, "Harap mengisi username dan password");
+            Helper.showMessage(this, "Harap mengisi username dan password anda");
             return;
         }
 
@@ -104,7 +104,7 @@ public class LoginActivity extends BaseActivity {
     }
 
     private void onFailureLogin() {
-        Helper.showMessage(this, "Terjadi kesalahan pada username atau password");
+        Helper.showMessage(this, "Terjadi kesalahan pada username atau password anda");
     }
 
     private void onFailureConnection() {
